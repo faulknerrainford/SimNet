@@ -37,21 +37,18 @@ class FlowReaction:
                       "SET a.payout = a.payout + 1"
                       ]
 
-    def applyrules(self):
-        driver = GraphDatabase.driver(self.uri, auth=("monitor", "monitor"))
-        with driver.session() as session:
-            for rule in self.rules:
-                session.run(rule)
-        driver.close()
+    def applyrules(self, tx):
+        for rule in self.rules:
+            tx.run(rule)
 
 
 if __name__ == '__main__':
     flowreaction = FlowReaction()
     clock = 0
     while clock < 2000:
-        flowreaction.applyrules()
         dri = GraphDatabase.driver(flowreaction.uri, auth=("monitor", "monitor"))
         with dri.session() as ses:
+            ses.write_transaction(flowreaction.applyrules)
             res = ses.run("MATCH (a:Clock) "
                           "RETURN a.time")
         temp = res.values()

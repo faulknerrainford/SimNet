@@ -1,10 +1,12 @@
 from neo4j import GraphDatabase
-from Dancers import Dancer
+from Toy_Agent import ToyAgent
+from Interface import Interface
 
 if __name__ == '__main__':
     verbose = False
     uri = "bolt://localhost:7687"
     dri = GraphDatabase.driver(uri, auth=("dancer", "dancer"))
+    intf = Interface()
     with dri.session() as ses:
         tx = ses.begin_transaction()
         res = tx.run("MATCH (n:Dancer)-[:LOCATED]->(a) "
@@ -13,11 +15,11 @@ if __name__ == '__main__':
                      "RETURN n.id, a.id")
         tx.close()
         results = res.values()
-        agents = [Dancer(ag[0]) for ag in results]
+        agents = [ToyAgent(ag[0]) for ag in results]
         clock = 0
         while clock < 2000:
             for agent in agents:
-                ses.write_transaction(agent.process, verbose)
+                ses.write_transaction(agent.move, intf)
             res = ses.run("MATCH (a:Clock) "
                           "SET a.time = a.time + 1 "
                           "RETURN a.time")
