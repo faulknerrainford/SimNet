@@ -15,9 +15,9 @@ if __name__ == '__main__':
                      "RETURN n.id, a.id")
         tx.close()
         results = res.values()
-        agents = [ToyAgent(ag[0]) for ag in results]
+        agents = [ToyAgent(ag[0], [0.5]) for ag in results]
         clock = 0
-        while clock < 2000:
+        while clock < 20:
             for agent in agents:
                 ses.write_transaction(agent.move, intf)
             res = ses.run("MATCH (a:Clock) "

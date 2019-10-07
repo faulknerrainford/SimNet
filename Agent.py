@@ -7,22 +7,20 @@ class Agent(ABC):
         self.id = agentid
         self.view = None
         self.params = params
+        self.choice = None
 
     @abstractmethod
     def choose(self, tx, intf):
         self.view = intf.perception(tx, self.id)
-        # node = self.view[0]
-        # edges = self.view[1:]
-        # choose edge and return value
-        # (might change to handing the whole edge around to keep end node info)
-        # for now we return 0 indicating we take the first edge
-        # mincost = 60
-        # choice = None
-        # for edge in edges:
-        #     if edge[cost]<mincost:
-        #         mincost = edge[cost]
-        #         choice = edge
-        # return choice
+        edges = self.view[1:]
+        validedges = []
+        node = tx.run("MATCH (n:Dancer) "
+                      "WHERE n.id = {id} "
+                      "RETURN n", id=self.id).values()[0][0]
+        for edge in edges:
+            if edge["cost"] < node["funds"] and edge.end_node["payout"] < edge.end_node["funds"]:
+                validedges = validedges + [edge]
+        self.view[1:] = validedges
 
     @abstractmethod
     def learn(self, tx, intf, choice):
@@ -30,13 +28,14 @@ class Agent(ABC):
         # uses interface to update network based on choice
 
     def move(self, tx, intf):
-        choice = self.choose(tx, intf)
-        self.learn(tx, intf, choice)
-        # Move node based on choice using tx
-        tx.run("MATCH (n)-[r:LOCATED]->() "
-               "WHERE n.id = {id} "
-               "DELETE (n)-[r:LOCATED]->()", id=self.id)
-        new = choice.end_node["id"]
-        tx.run("MATCH (n) (a) "
-               "WHERE n.id={id} AND a.id={new} "
-               "CREATE (n)-[r:LOCATED]->(a)", id=self.id, new=new)
+        self.choice = self.choose(tx, intf)
+        if self.choice:
+            self.learn(tx, intf, self.choice)
+            # Move node based on choice using tx
+            tx.run("MATCH (n:Dancer)-[r:LOCATED]->() "
+                   "WHERE n.id = {id} "
+                   "DELETE r", id=self.id)
+            new = self.choice.end_node["id"]
+            tx.run("MATCH (n:Dancer), (a:Node) "
+                   "WHERE n.id={id} AND a.id={new} "
+                   "CREATE (n)-[r:LOCATED]->(a)", id=self.id, new=new)

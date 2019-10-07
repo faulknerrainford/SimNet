@@ -40,7 +40,7 @@ if __name__ == '__main__':
     uri = "bolt://localhost:7687"
     driver = GraphDatabase.driver(uri, auth=("monitor", "monitor"))
     with driver.session() as session:
-        while clock < 2000:
+        while clock < 20:
             session.write_transaction(monitor.snapshot)
             tx = session.begin_transaction()
             res = tx.run("MATCH (a:Clock) "

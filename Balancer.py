@@ -3,39 +3,9 @@ from neo4j import GraphDatabase
 
 class FlowReaction:
 
-    def __init__(self):
+    def __init__(self, rules = []):
         self.uri = "bolt://localhost:7687"
-        self.rules = ["MATCH ()-[:LOCATED]->(a) "
-                      "WITH a, count(*) AS load "
-                      "WHERE load > 2 "
-                      "MATCH (a)-[r:REACHES]->() "
-                      "WHERE r.cost > 0 "
-                      "SET r.cost = r.cost - 1",
-                      "MATCH (a)-[:LOCATED]->(a) "
-                      "WITH a, count(*) AS load "
-                      "WHERE load < 1 "
-                      "MATCH ()-[r:REACHES]->(a) "
-                      "WHERE r.cost > 0 "
-                      "SET r.cost = r.cost - 1",
-                      "MATCH ()-[:LOCATED]->(a) "
-                      "WITH a, count(*) AS load "
-                      "WHERE load < 1 "
-                      "MATCH ()-[r:REACHES]->(a) "
-                      "WHERE r.cost > 0 "
-                      "SET r.cost = r.cost - 1",
-                      "MATCH (a:Node) "
-                      "WITH a "
-                      "WHERE a.funds < a.payout "
-                      "MATCH (a)-[r:REACHES]->() "
-                      "WHERE r.cost < 160 "
-                      "SET r.cost = r.cost + 1", "MATCH ()-[:LOCATED]->(a:Node)  "
-                      "WITH a, count(*) AS load"
-                      "WHERE a.funds < a.payout AND load < 1 "
-                      "SET a.payout = a.payout - 1",
-                      "MATCH (a:Node) "
-                      "WHERE a.funds > 2*a.payout "
-                      "SET a.payout = a.payout + 1"
-                      ]
+        self.rules = rules
 
     def applyrules(self, tx):
         for rule in self.rules:
@@ -43,9 +13,41 @@ class FlowReaction:
 
 
 if __name__ == '__main__':
-    flowreaction = FlowReaction()
+    rules = ["MATCH ()-[:LOCATED]->(a) "
+             "WITH a, count(*) AS num "
+             "WHERE num > 2 "
+             "MATCH (a)-[r:REACHES]->() "
+             "WHERE r.cost > 0 "
+             "SET r.cost = r.cost - 1",
+             "MATCH (a)-[:LOCATED]->(a) "
+             "WITH a, count(*) AS num "
+             "WHERE num < 1 "
+             "MATCH ()-[r:REACHES]->(a) "
+             "WHERE r.cost > 0 "
+             "SET r.cost = r.cost - 1",
+             "MATCH ()-[:LOCATED]->(a) "
+             "WITH a, count(*) AS num "
+             "WHERE num < 1 "
+             "MATCH ()-[r:REACHES]->(a) "
+             "WHERE r.cost > 0 "
+             "SET r.cost = r.cost - 1",
+             "MATCH (a:Node) "
+             "WITH a "
+             "WHERE a.funds < a.payout "
+             "MATCH (a)-[r:REACHES]->() "
+             "WHERE r.cost < 160 "
+             "SET r.cost = r.cost + 1",
+             "MATCH ()-[:LOCATED]->(a:Node)  "
+             "WITH a, count(*) AS num "
+             "WHERE a.funds < a.payout AND num < 1 "
+             "SET a.payout = a.payout - 1",
+             "MATCH (a:Node) "
+             "WHERE a.funds > 2*a.payout "
+             "SET a.payout = a.payout + 1"
+             ]
+    flowreaction = FlowReaction(rules)
     clock = 0
-    while clock < 2000:
+    while clock < 20:
         dri = GraphDatabase.driver(flowreaction.uri, auth=("monitor", "monitor"))
         with dri.session() as ses:
             ses.write_transaction(flowreaction.applyrules)
