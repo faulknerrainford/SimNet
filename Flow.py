@@ -9,17 +9,21 @@ if __name__ == '__main__':
     intf = Interface()
     with dri.session() as ses:
         tx = ses.begin_transaction()
-        res = tx.run("MATCH (n:Dancer)-[:LOCATED]->(a) "
-                     "WITH n, a "
-                     "ORDER BY n.id "
-                     "RETURN n.id, a.id")
+        res = tx.run("MATCH (a:Node) "
+                     "RETURN a.id")
         tx.close()
-        results = res.values()
-        agents = [ToyAgent(ag[0], [0.5]) for ag in results]
+        nodes = [v[0] for v in res.values()]
+        print(nodes)
         clock = 0
         while clock < 20:
-            for agent in agents:
-                ses.write_transaction(agent.move, intf)
+            for node in nodes:
+                agents = ses.run("MATCH (n:Dancer)-[r:LOCATED]->(a:Node) "
+                                 "WHERE a.id={id} "
+                                 "RETURN n.id, n.switch", id=node).values()
+                print(agents)
+                agents = [ToyAgent(ag[0], [ag[1]]) for ag in agents]
+                for agent in agents:
+                    ses.write_transaction(agent.move, intf)
             res = ses.run("MATCH (a:Clock) "
                           "SET a.time = a.time + 1 "
                           "RETURN a.time")
