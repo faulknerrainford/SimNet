@@ -3,7 +3,7 @@ from neo4j import GraphDatabase
 
 def applychange(tx, method="drop"):
     result = tx.run("MATCH (n:Node) "
-                    "WHERE NOT ()-[:LOCATED]->(n) "
+                    "WHERE NOT ()-[:LOCATED]->(n) AND n.funds=0 "
                     "RETURN n.id").values()
     if result:
         result = result[0]

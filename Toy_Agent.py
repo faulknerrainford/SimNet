@@ -1,9 +1,9 @@
 from Agent import Agent
-
+from random import random
 
 class ToyAgent(Agent):
 
-    def __init__(self, agentid, params):
+    def __init__(self, agentid, params=random()):
         if len(params) == 1:
             super(ToyAgent, self).__init__(agentid, params)
             self.switch = None

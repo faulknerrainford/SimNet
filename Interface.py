@@ -1,3 +1,6 @@
+from random import random
+
+
 class Interface:
 
     def __init__(self, node_vector_length=0, edge_vector_length=0):
@@ -52,3 +55,20 @@ class Interface:
         print(prop)
         print(value)
         tx.run(query, node=node["id"], value=value)
+
+    @staticmethod
+    def deleteagent(tx, agent):
+        tx.run("MATCH (n:Agent)-[r:LOCATED]->() ""WHERE n.id={ID} ""DELETE r", ID=agent["id"])
+        tx.run("MATCH (n:Agent) ""WHERE n.id={ID} ""DELETE n", ID=agent["id"])
+
+    @staticmethod
+    def addagent(tx, node, label, params):
+        query = "MATCH (n:"+label+") ""WITH n ""ORDER BY n.id DESC ""RETURN n.id"
+        highestid = tx.run(query).values()[0][0]
+        agentid = highestid + 1
+        switch = random()
+        values = ""
+        for val in params:
+            values = values +", "+ val[0] + ":"+str(val[1])+" "
+        query = "CREATE (a:"+label+" {id:{aID}, switch:{SWITCH}"+values+"})-[r:LOCATED]->(n)"
+        tx.run("MATCH (n) ""WHERE n.id={nID} "+query, aID=agentid, SWITCH=switch, nID=node["id"])
