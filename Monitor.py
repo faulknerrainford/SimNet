@@ -11,16 +11,16 @@ class Monitor:
         self.orecord = None
         self.nrecord = None
 
-    def snapshot(self, tx):
+    def snapshot(self, txl):
         self.clock = self.clock + 1
-        look = tx.run("MATCH (n:Node) "
-                      "WITH n "
-                      "ORDER BY n.id "
-                      "MATCH ()-[r:LOCATED]->(n) "
-                      "WITH n, count(*) as load "
-                      "MATCH (n)-[r:REACHES]->() "
-                      "WITH n, load, min(r.cost) as price "
-                      "RETURN n.id, n.payout, n.funds, load, price")
+        look = txl.run("MATCH (n:Node) "
+                       "WITH n "
+                       "ORDER BY n.id "
+                       "MATCH ()-[r:LOCATED]->(n) "
+                       "WITH n, count(*) as load "
+                       "MATCH (n)-[r:REACHES]->() "
+                       "WITH n, load, min(r.cost) as price "
+                       "RETURN n.id, n.payout, n.funds, load, price")
         self.nrecord = look.values()
         if self.nrecord != self.orecord:
             self.records[self.clock] = self.orecord
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     uri = "bolt://localhost:7687"
     driver = GraphDatabase.driver(uri, auth=("monitor", "monitor"))
     with driver.session() as session:
-        while clock < 20:
+        while clock < 2000:
             session.write_transaction(monitor.snapshot)
             tx = session.begin_transaction()
             res = tx.run("MATCH (a:Clock) "

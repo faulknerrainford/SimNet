@@ -13,14 +13,12 @@ if __name__ == '__main__':
                      "RETURN a.id")
         tx.close()
         nodes = [v[0] for v in res.values()]
-        print(nodes)
         clock = 0
-        while clock < 20:
+        while clock < 2000:
             for node in nodes:
-                agents = ses.run("MATCH (n:Dancer)-[r:LOCATED]->(a:Node) "
+                agents = ses.run("MATCH (n:Agent)-[r:LOCATED]->(a:Node) "
                                  "WHERE a.id={id} "
                                  "RETURN n.id, n.switch", id=node).values()
-                print(agents)
                 agents = [ToyAgent(ag[0], [ag[1]]) for ag in agents]
                 for agent in agents:
                     ses.write_transaction(agent.move, intf)

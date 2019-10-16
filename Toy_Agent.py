@@ -1,6 +1,7 @@
 from Agent import Agent
 from random import random
 
+
 class ToyAgent(Agent):
 
     def __init__(self, agentid, params=random()):
@@ -12,7 +13,7 @@ class ToyAgent(Agent):
 
     def choose(self, tx, intf):
         super(ToyAgent, self).choose(tx, intf)
-        node = intf.getnode(tx, self.id, "Dancer")
+        node = intf.getnode(tx, self.id, "Agent")
         self.switch = node["switch"]
         edges = self.view[1:]
         if self.switch > 0.5 and edges:
@@ -58,12 +59,12 @@ class ToyAgent(Agent):
     def move(self, tx, intf):
         super(ToyAgent, self).move(tx, intf)
         if self.choice:
-            node = tx.run("MATCH (n:Dancer) "
+            node = tx.run("MATCH (n:Agent) "
                           "WHERE n.id = {id} "
                           "RETURN n", id=self.id).values()[0][0]
             cost = self.choice["cost"]
             payout = self.choice.end_node["payout"]
             intf.updatenode(tx, node, "funds", node["funds"] - cost)
-            intf.updatenode(tx, self.choice.start_node, "funds", self.choice.start_node["funds"] + self.choice["cost"])
+            intf.updatenode(tx, self.choice.start_node, "funds", self.choice.start_node["funds"] + cost)
             intf.updatenode(tx, self.choice.end_node, "funds", self.choice.end_node["funds"] - payout)
             intf.updatenode(tx, node, "funds", node["funds"] + payout)

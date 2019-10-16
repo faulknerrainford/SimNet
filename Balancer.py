@@ -3,9 +3,9 @@ from neo4j import GraphDatabase
 
 class FlowReaction:
 
-    def __init__(self, rules = []):
+    def __init__(self, ruleset=None):
         self.uri = "bolt://localhost:7687"
-        self.rules = rules
+        self.rules = ruleset
 
     def applyrules(self, tx):
         for rule in self.rules:
@@ -47,7 +47,7 @@ if __name__ == '__main__':
              ]
     flowreaction = FlowReaction(rules)
     clock = 0
-    while clock < 20:
+    while clock < 2000:
         dri = GraphDatabase.driver(flowreaction.uri, auth=("monitor", "monitor"))
         with dri.session() as ses:
             ses.write_transaction(flowreaction.applyrules)

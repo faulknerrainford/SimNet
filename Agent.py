@@ -14,11 +14,11 @@ class Agent(ABC):
         self.view = intf.perception(tx, self.id)
         edges = self.view[1:]
         validedges = []
-        node = tx.run("MATCH (n:Dancer) "
+        node = tx.run("MATCH (n:Agent) "
                       "WHERE n.id = {id} "
                       "RETURN n", id=self.id).values()[0][0]
         for edge in edges:
-            if edge["cost"] < node["funds"] and edge.end_node["payout"] < edge.end_node["funds"]:
+            if edge["cost"] <= node["funds"] and edge.end_node["payout"] <= edge.end_node["funds"]:
                 validedges = validedges + [edge]
         self.view[1:] = validedges
 
@@ -32,10 +32,10 @@ class Agent(ABC):
         if self.choice:
             self.learn(tx, intf, self.choice)
             # Move node based on choice using tx
-            tx.run("MATCH (n:Dancer)-[r:LOCATED]->() "
+            tx.run("MATCH (n:Agent)-[r:LOCATED]->() "
                    "WHERE n.id = {id} "
                    "DELETE r", id=self.id)
             new = self.choice.end_node["id"]
-            tx.run("MATCH (n:Dancer), (a:Node) "
+            tx.run("MATCH (n:Agent), (a:Node) "
                    "WHERE n.id={id} AND a.id={new} "
                    "CREATE (n)-[r:LOCATED]->(a)", id=self.id, new=new)

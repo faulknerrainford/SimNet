@@ -9,22 +9,23 @@ class Interface:
 
     @staticmethod
     def perception(tx, agent):
-        results = tx.run("MATCH (m:Dancer)-[s:LOCATED]->(n:Node) "
+        results = tx.run("MATCH (m:Agent)-[s:LOCATED]->(n:Node) "
                          "WITH n, m "
                          "WHERE m.id={agent} "
                          "MATCH (n)-[r:REACHES]->(a) "
                          "RETURN n, r, a", agent=agent).values()
-        node = results[0][0]
-        edges = [edge[1]for edge in results]
-        results = [node] + edges
+        if results:
+            node = results[0][0]
+            edges = [edge[1]for edge in results]
+            results = [node] + edges
         # TO DO:
         # Check vectors match expected lengths, in all functions
         return results
 
     @staticmethod
     def getnode(tx, nodeid, label=None):
-        if label == "Dancer":
-            results = tx.run("MATCH (n:Dancer) "
+        if label == "Agent":
+            results = tx.run("MATCH (n:Agent) "
                              "WHERE n.id = {id} "
                              "RETURN n", id=nodeid, lab=label).values()
         else:
@@ -51,9 +52,7 @@ class Interface:
 
     @staticmethod
     def updatenode(tx, node, prop, value):
-        query = "MATCH (a) ""WHERE a.id={node} ""SET a." + prop + "={value}"
-        print(prop)
-        print(value)
+        query = "MATCH (a:Node) ""WHERE a.id={node} ""SET a." + prop + "={value}"
         tx.run(query, node=node["id"], value=value)
 
     @staticmethod
@@ -69,6 +68,6 @@ class Interface:
         switch = random()
         values = ""
         for val in params:
-            values = values +", "+ val[0] + ":"+str(val[1])+" "
+            values = values + ", " + val[0] + ":"+str(val[1])+" "
         query = "CREATE (a:"+label+" {id:{aID}, switch:{SWITCH}"+values+"})-[r:LOCATED]->(n)"
-        tx.run("MATCH (n) ""WHERE n.id={nID} "+query, aID=agentid, SWITCH=switch, nID=node["id"])
+        tx.run("MATCH (n:Node) ""WHERE n.id={nID} "+query, aID=agentid, SWITCH=switch, nID=node["id"])

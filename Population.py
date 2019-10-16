@@ -56,7 +56,6 @@ if __name__ == '__main__':
     while clock < 2000:
         with dri.session() as ses:
             agents = ses.read_transaction(findagents)
-            print(agents)
             if type(agents) == "list" and agents:
                 [ses.write_transaction(intf.deleteagent, agent) for agent in agents]
             elif agents:
@@ -66,8 +65,8 @@ if __name__ == '__main__':
                 [ses.write_transaction(intf.addagent, node, "Agent", [("funds", 10)]) for node in nodes]
             elif nodes:
                 ses.write_transaction(intf.addagent, nodes, "Agent", [("funds", 10)])
-        res = ses.run("MATCH (a:Clock) "
-                      "RETURN a.time")
+            res = ses.run("MATCH (a:Clock) "
+                          "RETURN a.time")
         temp = res.values()
         clock = temp[0][0]
         print(clock)
