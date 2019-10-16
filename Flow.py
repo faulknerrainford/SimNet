@@ -20,6 +20,8 @@ if __name__ == '__main__':
                                  "WHERE a.id={id} "
                                  "RETURN n.id, n.switch", id=node).values()
                 agents = [ToyAgent(ag[0], [ag[1]]) for ag in agents]
+                # TODO: Pass in ToyAgent as class rather than hard code it. Add in check that class is a subclass of
+                #  Agent
                 for agent in agents:
                     ses.write_transaction(agent.move, intf)
             res = ses.run("MATCH (a:Clock) "
