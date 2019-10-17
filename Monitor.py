@@ -12,7 +12,6 @@ class Monitor:
         self.nrecord = None
 
     def snapshot(self, txl):
-        self.clock = self.clock + 1
         look = txl.run("MATCH (n:Node) "
                        "WITH n "
                        "ORDER BY n.id "
@@ -26,6 +25,7 @@ class Monitor:
             self.records[self.clock] = self.orecord
             print(self.orecord)
             self.orecord = self.nrecord
+            self.clock = self.clock + 1
 
     def close(self):
         print(self.clock)

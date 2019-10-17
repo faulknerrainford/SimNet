@@ -56,6 +56,15 @@ class Interface:
         tx.run(query, node=node["id"], value=value)
 
     @staticmethod
+    def updateagent(tx, node, prop, value):
+        query = "MATCH (a:Agent) ""WHERE a.id={node} ""SET a." + prop + "={value}"
+        tx.run(query, node=node["id"], value=value)
+        print(node["id"])
+        print(prop)
+        print(node[prop])
+        print(value)
+
+    @staticmethod
     def deleteagent(tx, agent):
         tx.run("MATCH (n:Agent)-[r:LOCATED]->() ""WHERE n.id={ID} ""DELETE r", ID=agent["id"])
         tx.run("MATCH (n:Agent) ""WHERE n.id={ID} ""DELETE n", ID=agent["id"])
