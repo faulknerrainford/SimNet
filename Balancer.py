@@ -48,7 +48,7 @@ if __name__ == '__main__':
     flowreaction = FlowReaction(rules)
     clock = 0
     while clock < 2000:
-        dri = GraphDatabase.driver(flowreaction.uri, auth=("monitor", "monitor"))
+        dri = GraphDatabase.driver(flowreaction.uri, auth=("dancer", "dancer"))
         with dri.session() as ses:
             ses.write_transaction(flowreaction.applyrules)
             res = ses.run("MATCH (a:Clock) "

@@ -44,7 +44,7 @@ if __name__ == '__main__':
     clock = 0
     while clock < 2000:
         uri = "bolt://localhost:7687"
-        dri = GraphDatabase.driver(uri, auth=("monitor", "monitor"))
+        dri = GraphDatabase.driver(uri, auth=("dancer", "dancer"))
         with dri.session() as ses:
             ses.write_transaction(applychange)
             res = ses.run("MATCH (a:Clock) "

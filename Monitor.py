@@ -20,11 +20,11 @@ class Monitor:
         self.ax2 = subplot2grid((1, 2), (0, 1))
         self.ax1.set_title('Agent Strategies over Time')
         self.ax2.set_title('Agents of Nodes')
-        self.ax1.ylabel("No. Agents")
-        self.ax1.ylabel("No. Agents")
-        self.ax1.xlabel("Time")
-        self.ax2.ylabel("No. Agents")
-        self.ax2.xlabel("Time")
+        self.ax1.set_ylabel("No. Agents")
+        self.ax1.set_ylabel("No. Agents")
+        self.ax1.set_xlabel("Time")
+        self.ax2.set_ylabel("No. Agents")
+        self.ax2.set_xlabel("Time")
         self.ax1.set_ylim(ylims)
         self.ax1.set_xlim(xlims)
         self.ax2.set_ylim(ylims)
@@ -41,8 +41,8 @@ class Monitor:
         self.p2 = {}
         for i in range(nodes):
             self.y2[i] = zeros(0)
-            self.p2[i], = self.ax2(self.t, self.y2[i])
-        self.ax2.legend()
+            self.p2[i], = self.ax2.plot(self.t, self.y2[i])
+        # self.ax2.legend()
         self.xmin = 0.0
         self.xmax = 20.0
         self.ymin1 = 0.0
@@ -64,7 +64,6 @@ class Monitor:
         self.nrecord = look.values()
         if self.nrecord != self.orecord:
             self.records[self.clock] = self.orecord
-            print(self.orecord)
             self.orecord = self.nrecord
             self.clock = self.clock + 1
             # Update plot 1
@@ -83,33 +82,29 @@ class Monitor:
             if self.x >= self.xmax - 1.00:
                 self.p11.axes.set_xlim(0.0, self.x + 1.0)
                 self.p12.axes.set_xlim(0.0, self.x + 1.0)
+                [self.p2[node[0]].axes.set_xlim(0.0, self.x + 1.0) for node in res]
                 self.xmax = self.x
             self.y = max([mb, mc])
-            if self.y > self.ymax1 - 1.0 or self.y > self.ymax1 - 1.0:
+            if self.y > self.ymax1 - 1.0:
                 self.p11.axes.set_ylim(0.0, self.y + 1.0)
                 self.p12.axes.set_ylim(0.0, self.y + 1.0)
             # Update plot 2
-            mb = txl.run("MATCH (n:Agent) "
-                         "WHERE n.switch > 0.5 "
-                         "RETURN count(*)").values()[0][0]
-            tot = txl.run("MATCH (n:Agent) "
-                          "RETURN count(*)").values()[0][0]
-            mc = tot - mb
-            self.y11 = append(self.y11, mb)
-            self.y12 = append(self.y12, mc)
-            self.t = append(self.t, ctime)
-            self.x = ctime
-            self.p11.set_data(self.t, self.y11)
-            self.p12.set_data(self.t, self.y12)
-            if self.x >= self.xmax - 1.00:
-                self.p11.axes.set_xlim(0.0, self.x + 1.0)
-                self.p12.axes.set_xlim(0.0, self.x + 1.0)
-                self.xmax = self.x
-            self.y = max([mb, mc])
-            if self.y > self.ymax1 - 1.0 or self.y > self.ymax1 - 1.0:
-                self.p11.axes.set_ylim(0.0, self.y + 1.0)
-                self.p12.axes.set_ylim(0.0, self.y + 1.0)
-
+            resl = txl.run("MATCH ()-[:LOCATED]->(n:Node) "
+                           "RETURN n.id, count(*)").values()
+            # loop assigning counts to correct data
+            for node in range(6):
+                if node in [n[0] for n in resl]:
+                    count = [n[1] for n in resl if n[0] == node]
+                    self.y2[node] = append(self.y2[node], count[0])
+                    # loop assigning data to plots
+                    self.p2[node].set_data(self.t, self.y2[node])
+                else:
+                    self.y2[node] = append(self.y2[node], 0)
+                    self.p2[node].set_data(self.t, self.y2[node])
+            # Update and check axis (update axis on these plots)
+            self.y = max([node[1] for node in resl])
+            if self.y > self.ymax2 - 1.0:
+                [self.p2[node[0]].axes.set_ylim(0.0, self.y + 1.0) for node in resl]
             plt.pause(0.005)
 
     def close(self):
@@ -117,8 +112,9 @@ class Monitor:
         pickle_out = open("records.pickle", "wb")
         pickle.dump(self.records, pickle_out)
         pickle_out.close()
-        # TODO: pickle dump graph
-        # TODO: save out graph
+        # TODO: dump graph data as strings back into the database
+        # save out graph
+        plt.savefig("figure1")
         plt.show()
 
 
