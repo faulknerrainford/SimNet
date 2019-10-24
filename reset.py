@@ -9,7 +9,7 @@ with dri.session() as ses:
     ses.run("MATCH (a) "
             "DELETE a")
     for i in range(6):
-        ses.run("CREATE (a:Node {id:{id}, funds:10, payout:{id}})", id=i)
+        ses.run("CREATE (a:Node {id:{id}, funds:1000, payout:{id}})", id=i)
     for i in range(10):
         ses.run("CREATE (a:Agent {id:{id}, funds:10, switch:0.5})", id=i)
     ses.run("CREATE (a:Clock {time:0})")

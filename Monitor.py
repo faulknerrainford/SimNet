@@ -39,6 +39,7 @@ class Monitor:
         # Set data for plot 2
         self.y2 = {}
         self.p2 = {}
+        self.nodes = nodes
         for i in range(nodes):
             self.y2[i] = zeros(0)
             self.p2[i], = self.ax2.plot(self.t, self.y2[i])
@@ -62,7 +63,7 @@ class Monitor:
                        "WITH n, load, min(r.cost) as price "
                        "RETURN n.id, n.payout, n.funds, load, price")
         self.nrecord = look.values()
-        if self.nrecord != self.orecord:
+        if self.x != ctime:
             self.records[self.clock] = self.orecord
             self.orecord = self.nrecord
             self.clock = self.clock + 1
@@ -82,7 +83,7 @@ class Monitor:
             if self.x >= self.xmax - 1.00:
                 self.p11.axes.set_xlim(0.0, self.x + 1.0)
                 self.p12.axes.set_xlim(0.0, self.x + 1.0)
-                [self.p2[node[0]].axes.set_xlim(0.0, self.x + 1.0) for node in res]
+                [self.p2[nid].axes.set_xlim(0.0, self.x + 1.0) for nid in range(self.nodes)]
                 self.xmax = self.x
             self.y = max([mb, mc])
             if self.y > self.ymax1 - 1.0:
@@ -92,7 +93,7 @@ class Monitor:
             resl = txl.run("MATCH ()-[:LOCATED]->(n:Node) "
                            "RETURN n.id, count(*)").values()
             # loop assigning counts to correct data
-            for node in range(6):
+            for node in range(self.nodes):
                 if node in [n[0] for n in resl]:
                     count = [n[1] for n in resl if n[0] == node]
                     self.y2[node] = append(self.y2[node], count[0])
