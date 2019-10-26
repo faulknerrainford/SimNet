@@ -3,7 +3,7 @@ from neo4j import GraphDatabase
 
 def applychange(tx, method="drop"):
     result = tx.run("MATCH (n:Node) "
-                    "WHERE NOT ()-[:LOCATED]->(n) AND n.funds=0 "
+                    "WHERE NOT ()-[:LOCATED]->(n) AND n.funds<n.payout "
                     "RETURN n.id").values()
     if result:
         result = result[0]
@@ -42,7 +42,7 @@ def applychange(tx, method="drop"):
 
 if __name__ == '__main__':
     clock = 0
-    while clock < 2000:
+    while clock < 40:
         uri = "bolt://localhost:7687"
         dri = GraphDatabase.driver(uri, auth=("dancer", "dancer"))
         with dri.session() as ses:

@@ -115,14 +115,14 @@ class Monitor:
         pickle_out.close()
         # TODO: dump graph data as strings back into the database
         # save out graph
-        plt.savefig("figure1")
+        plt.savefig("figure4")
         plt.show()
 
 
 if __name__ == '__main__':
     monitor = Monitor((0, 12), (0, 20), 6)
     clock = 0
-    length = 2000
+    length = 40
     uri = "bolt://localhost:7687"
     driver = GraphDatabase.driver(uri, auth=("monitor", "monitor"))
     with driver.session() as session:

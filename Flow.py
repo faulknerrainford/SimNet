@@ -14,7 +14,7 @@ if __name__ == '__main__':
         tx.close()
         nodes = [v[0] for v in res.values()]
         clock = 0
-        while clock < 2000:
+        while clock < 40:
             for node in nodes:
                 agents = ses.run("MATCH (n:Agent)-[r:LOCATED]->(a:Node) "
                                  "WHERE a.id={id} "

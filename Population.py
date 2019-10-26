@@ -53,18 +53,19 @@ if __name__ == '__main__':
     dri = GraphDatabase.driver(uri, auth=("dancer", "dancer"))
     intf = Interface()
     clock = 0
-    while clock < 2000:
-        with dri.session() as ses:
-            agents = ses.read_transaction(findagents)
-            if type(agents) == "list" and agents:
-                [ses.write_transaction(intf.deleteagent, agent) for agent in agents]
-            elif agents:
-                ses.write_transaction(intf.deleteagent, agents)
-            nodes = ses.read_transaction(findnodes)
-            if type(nodes) == "list" and nodes:
-                [ses.write_transaction(intf.addagent, node, "Agent", [("funds", 10)]) for node in nodes]
-            elif nodes:
-                ses.write_transaction(intf.addagent, nodes, "Agent", [("funds", 10)])
+    while clock < 40:
+        if clock % 2 == 0:
+            with dri.session() as ses:
+                agents = ses.read_transaction(findagents)
+                if type(agents) == "list" and agents:
+                    [ses.write_transaction(intf.deleteagent, agent) for agent in agents]
+                elif agents:
+                    ses.write_transaction(intf.deleteagent, agents)
+                nodes = ses.read_transaction(findnodes)
+                if type(nodes) == "list" and nodes:
+                    [ses.write_transaction(intf.addagent, node, "Agent", [("funds", 10)]) for node in nodes]
+                elif nodes:
+                    ses.write_transaction(intf.addagent, nodes, "Agent", [("funds", 10)])
             res = ses.run("MATCH (a:Clock) "
                           "RETURN a.time")
         temp = res.values()
