@@ -11,6 +11,18 @@ class ToyAgent(Agent):
         else:
             raise ValueError("Incorrect parameter length, Toy Agent takes 1 parameter only")
 
+    def perception(self, tx, intf):
+        super(ToyAgent, self).perception(tx, intf)
+        edges = self.view[1:]
+        valid_edges = []
+        node = tx.run("MATCH (n:Agent) "
+                      "WHERE n.id = {id} "
+                      "RETURN n", id=self.id).values()[0][0]
+        for edge in edges:
+            if edge["cost"] <= node["funds"] and edge.end_node["payout"] <= edge.end_node["funds"]:
+                valid_edges = valid_edges + [edge]
+        self.view[1:] = valid_edges
+
     def choose(self, tx, intf):
         super(ToyAgent, self).choose(tx, intf)
         node = intf.getnode(tx, self.id, "Agent")
@@ -56,8 +68,7 @@ class ToyAgent(Agent):
             self.switch = 0
         intf.updateagent(tx, self.view[0], "switch", self.switch)
 
-    def move(self, tx, intf):
-        super(ToyAgent, self).move(tx, intf)
+    def payment(self, tx, intf):
         if self.choice:
             agent = tx.run("MATCH (n:Agent) "
                            "WHERE n.id = {id} "
@@ -71,3 +82,6 @@ class ToyAgent(Agent):
             intf.updatenode(tx, self.choice.start_node, "funds", self.choice.start_node["funds"] + cost)
             intf.updatenode(tx, self.choice.end_node, "funds", self.choice.end_node["funds"] - payout)
             intf.updateagent(tx, agent, "funds", agent["funds"] - cost + payout)
+
+    def move(self, tx, intf):
+        super(ToyAgent, self).move(tx, intf)
