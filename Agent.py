@@ -3,11 +3,12 @@ from abc import ABC, abstractmethod
 
 class Agent(ABC):
 
-    def __init__(self, agentid, params=None):
+    def __init__(self, agentid, params=None, nuid = "id"):
         self.id = agentid
         self.view = None
         self.params = params
         self.choice = None
+        self.nuid = nuid
 
     @abstractmethod
     def perception(self, tx, intf):
@@ -36,7 +37,7 @@ class Agent(ABC):
                    "DELETE r", id=self.id)
             new = self.choice.end_node["id"]
             tx.run("MATCH (n:Agent), (a:Node) "
-                   "WHERE n.id={id} AND a.id={new} "
+                   "WHERE n.id={id} AND a." + self.nuid + "={new} "
                    "CREATE (n)-[r:LOCATED]->(a)", id=self.id, new=new)
             self.payment(tx, intf, choice)
             self.learn(tx, intf, self.choice)

@@ -3,7 +3,7 @@ from matplotlib.pylab import *
 import pickle
 from matplotlib import pyplot as plt
 
-
+# TODO: add nuid
 class Monitor:
 
     def __init__(self, xlims, ylims, nodes):

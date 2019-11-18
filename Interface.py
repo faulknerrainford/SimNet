@@ -22,24 +22,26 @@ class Interface:
         return results
 
     @staticmethod
-    def getnode(tx, nodeid, label=None):
+    def getnode(tx, nodeid, label=None, uid=None):
+        if not uid:
+            uid = "id"
         if label == "Agent":
-            results = tx.run("MATCH (n:Agent) "
-                             "WHERE n.id = {id} "
-                             "RETURN n", id=nodeid, lab=label).values()
+            query = "MATCH (n:Agent) ""WHERE n."+uid+" = {id} ""RETURN n"
+            results = tx.run(query, id=nodeid, lab=label).values()
         else:
-            results = tx.run("MATCH (n) "
-                             "WHERE n.id = {id} "
-                             "RETURN n", id=nodeid).values()
+            query = "MATCH (n) ""WHERE n."+uid+" = {id} ""RETURN n"
+            results = tx.run(query, id=nodeid).values()
         node = results[0][0]
         return node
 
     @staticmethod
-    def getnodevalue(tx, node, value, label=None):
+    def getnodevalue(tx, node, value, label=None, uid=None):
+        if not uid:
+            uid = "id"
         if label:
-            query = "MATCH (a:" + label + ") ""WHERE a.id={node} ""RETURN a." + value
+            query = "MATCH (a:" + label + ") ""WHERE a." + uid + "={node} ""RETURN a." + value
         else:
-            query = "MATCH (a:Node) ""WHERE a.id={node} ""RETURN a." + value
+            query = "MATCH (a:Node) ""WHERE a." + uid + "={node} ""RETURN a." + value
         tx.run(query, node=node, value=value)
 
     @staticmethod
@@ -51,33 +53,44 @@ class Interface:
         return dict([tuple(edge.items())[0]])
 
     @staticmethod
-    def updateedge(tx, edge, prop, value):
+    def updateedge(tx, edge, prop, value, uid=None):
+        if not uid:
+            uid = "id"
         start = edge.start_node
         end = edge.end_node
-        query = "MATCH (a:Node)-[r:REACHES]->(b:Node) ""WHERE a.id={start} AND b.id={end} ""SET r." + prop + "={val}"
-        tx.run(query, start=start["id"], end=end["id"], val=value)
+        query = "MATCH (a:Node)-[r:REACHES]->(b:Node) ""WHERE a." + uid + "={start} AND b." + uid +\
+                "={end} ""SET r." + prop + "={val}"
+        tx.run(query, start=start[uid], end=end[uid], val=value)
 
     @staticmethod
-    def updatenode(tx, node, prop, value):
-        query = "MATCH (a:Node) ""WHERE a.id={node} ""SET a." + prop + "={value}"
-        tx.run(query, node=node["id"], value=value)
+    def updatenode(tx, node, prop, value, uid=None):
+        if not uid:
+            uid = "id"
+        query = "MATCH (a:Node) ""WHERE a." + uid + "={node} ""SET a." + prop + "={value}"
+        tx.run(query, node=node[uid], value=value)
 
     @staticmethod
-    def updateagent(tx, node, prop, value):
-        query = "MATCH (a:Agent) ""WHERE a.id={node} ""SET a." + prop + "={value}"
-        tx.run(query, node=node["id"], value=value)
-        print(node["id"])
+    def updateagent(tx, node, prop, value, uid=None):
+        if not uid:
+            uid = "id"
+        query = "MATCH (a:Agent) ""WHERE a." + uid + "={node} ""SET a." + prop + "={value}"
+        tx.run(query, node=node[uid], value=value)
+        print(node[uid])
         print(prop)
         print(node[prop])
         print(value)
 
     @staticmethod
-    def deleteagent(tx, agent):
-        tx.run("MATCH (n:Agent)-[r:LOCATED]->() ""WHERE n.id={ID} ""DELETE r", ID=agent["id"])
-        tx.run("MATCH (n:Agent) ""WHERE n.id={ID} ""DELETE n", ID=agent["id"])
+    def deleteagent(tx, agent, uid=None):
+        if not uid:
+            uid = "id"
+        tx.run("MATCH (n:Agent)-[r:LOCATED]->() ""WHERE n." + uid + "={ID} ""DELETE r", ID=agent[uid])
+        tx.run("MATCH (n:Agent) ""WHERE n." + uid + "={ID} ""DELETE n", ID=agent[uid])
 
     @staticmethod
-    def addagent(tx, node, label, params):
+    def addagent(tx, node, label, params, uid=None):
+        if not uid:
+            uid = "id"
         query = "MATCH (n:"+label+") ""WITH n ""ORDER BY n.id DESC ""RETURN n.id"
         highestid = tx.run(query).values()[0][0]
         agentid = highestid + 1
@@ -85,5 +98,5 @@ class Interface:
         values = ""
         for val in params:
             values = values + ", " + val[0] + ":"+str(val[1])+" "
-        query = "CREATE (a:"+label+" {id:{aID}, switch:{SWITCH}"+values+"})-[r:LOCATED]->(n)"
-        tx.run("MATCH (n:Node) ""WHERE n.id={nID} "+query, aID=agentid, SWITCH=switch, nID=node["id"])
+        query = "CREATE (a:"+label+" {" + uid + ":{aID}, switch:{SWITCH}"+values+"})-[r:LOCATED]->(n)"
+        tx.run("MATCH (n:Node) ""WHERE n." + uid + "={nID} "+query, aID=agentid, SWITCH=switch, nID=node[uid])

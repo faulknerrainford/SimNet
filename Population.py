@@ -25,7 +25,7 @@
 
 from neo4j import GraphDatabase
 from Interface import Interface
-
+# TODO: add nuid
 
 def findagents(tx):
     results = tx.run("MATCH (n:Agent) " 

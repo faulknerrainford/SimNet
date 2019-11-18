@@ -1,6 +1,6 @@
 from neo4j import GraphDatabase
 
-
+# TODO: Add nuid
 class FlowReaction:
 
     def __init__(self, ruleset=None):

@@ -1,6 +1,6 @@
 from neo4j import GraphDatabase
 
-
+# TODO: add nuid
 def applychange(tx, method="drop"):
     result = tx.run("MATCH (n:Node) "
                     "WHERE NOT ()-[:LOCATED]->(n) AND n.funds<n.payout "
