@@ -35,6 +35,14 @@ class Interface:
         return node
 
     @staticmethod
+    def getnodevalue(tx, node, value, label=None):
+        if label:
+            query = "MATCH (a:" + label + ") ""WHERE a.id={node} ""RETURN a." + value
+        else:
+            query = "MATCH (a:Node) ""WHERE a.id={node} ""RETURN a." + value
+        tx.run(query, node=node, value=value)
+
+    @staticmethod
     def getnodevector(node):
         return dict(list(tuple(node.items())))
 
