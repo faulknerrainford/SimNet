@@ -1,4 +1,3 @@
-from random import random
 
 
 class Interface:
@@ -92,11 +91,20 @@ class Interface:
         if not uid:
             uid = "id"
         query = "MATCH (n:"+label+") ""WITH n ""ORDER BY n.id DESC ""RETURN n.id"
-        highestid = tx.run(query).values()[0][0]
-        agentid = highestid + 1
-        switch = random()
-        values = ""
-        for val in params:
-            values = values + ", " + val[0] + ":"+str(val[1])+" "
-        query = "CREATE (a:"+label+" {" + uid + ":{aID}, switch:{SWITCH}"+values+"})-[r:LOCATED]->(n)"
-        tx.run("MATCH (n:Node) ""WHERE n." + uid + "={nID} "+query, aID=agentid, SWITCH=switch, nID=node[uid])
+        highest_id = tx.run(query).values()[0][0]
+        agent_id = highest_id + 1
+        query = "CREATE (a:"+label+" {id:"+agent_id
+        for param in params:
+            query = query + ", " + param.key() + ":" + param.value()
+        query = query + "})-[r:LOCATED]->(n)"
+        tx.run("MATCH (n:Node) ""WHERE n." + uid + "=" + node[uid] + " " + query)
+
+        # TODO: Integrate toy functionality back in by updating toy files to use new system
+
+        # CODE FOR TOY
+        # switch = random()
+        # values = ""
+        # for val in params:
+        #     values = values + ", " + val[0] + ":"+str(val[1])+" "
+        # query = "CREATE (a:"+label+" {" + uid + ":{aID}, switch:{SWITCH}"+values+"})-[r:LOCATED]->(n)"
+        # tx.run("MATCH (n:Node) ""WHERE n." + uid + "={nID} "+query, aID=agentid, SWITCH=switch, nID=node[uid])

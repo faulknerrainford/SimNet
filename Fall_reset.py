@@ -1,4 +1,6 @@
 from neo4j import GraphDatabase
+from Fall_agent import FallAgent
+from Interface import Interface
 
 uri = "bolt://localhost:7687"
 dri = GraphDatabase.driver(uri, auth=("dancer", "dancer"))
@@ -63,3 +65,8 @@ with dri.session() as ses:
     ses.run("MATCH (a), (b) "
             "WHERE a.name='Home' AND b.name='Hos' "
             "CREATE (a)-[r:REACHES {effort:0, mobility:1, confidence:1, energy: -0.8, modm:-0.8, modc:-0.3}]->(b)")
+    # Declare a fall agent with a None id and use it to generate a set of agents into the system
+    fa = FallAgent(None)
+    intf = Interface()
+    for i in range(10):
+        ses.write_transaction(fa.generator, intf, [0.8, 0.9, 1])

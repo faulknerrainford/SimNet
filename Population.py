@@ -25,26 +25,19 @@
 
 from neo4j import GraphDatabase
 from Interface import Interface
+from Fall_agent import FallAgent
 # TODO: add nuid
 
-def findagents(tx):
-    results = tx.run("MATCH (n:Agent) " 
-                     "WHERE n.funds=0 "
-                     "RETURN n").values()
-    if results:
-        return results[0][0]
-    else:
-        return results
+
+def countactiveagents(tx):
+    total_agents = tx.run()
+    care_agents = tx.run()
+    return total_agents-care_agents
 
 
-def findnodes(tx):
-    results = tx.run("MATCH (n:Node) "
-                     "WHERE NOT ()-[:LOCATED]->(n) "
-                     "RETURN n").values()
-    if results:
-        return results[0][0]
-    else:
-        return results
+def countindagents(tx):
+    ind_agents = tx.run()
+    return ind_agents
 
 
 if __name__ == '__main__':
@@ -53,22 +46,16 @@ if __name__ == '__main__':
     dri = GraphDatabase.driver(uri, auth=("dancer", "dancer"))
     intf = Interface()
     clock = 0
+    fa = FallAgent(None)
     while clock < 40:
         if clock % 2 == 0:
             with dri.session() as ses:
-                agents = ses.read_transaction(findagents)
-                if type(agents) == "list" and agents:
-                    [ses.write_transaction(intf.deleteagent, agent) for agent in agents]
-                elif agents:
-                    ses.write_transaction(intf.deleteagent, agents)
-                nodes = ses.read_transaction(findnodes)
-                if type(nodes) == "list" and nodes:
-                    [ses.write_transaction(intf.addagent, node, "Agent", [("funds", 10)]) for node in nodes]
-                elif nodes:
-                    ses.write_transaction(intf.addagent, nodes, "Agent", [("funds", 10)])
-            res = ses.run("MATCH (a:Clock) "
-                          "RETURN a.time")
-        temp = res.values()
-        clock = temp[0][0]
+                active = ses.read_transaction(countactiveagents)
+                ind = ses.read_transaction(countindagents)
+                if ind < 10 and active - ind < 10:
+                    for i in range(max(10-ind, 10-(active-ind))):
+                        ses.write_transaction(fa.generator, intf, [0.8, 0.9, 1])
+            clock = ses.run("MATCH (a:Clock) "
+                            "RETURN a.time").values()[0][0]
         print(clock)
     dri.close()

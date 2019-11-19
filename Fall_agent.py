@@ -1,5 +1,6 @@
 from Agent import Agent
 from random import random
+from numpy.random import normal
 
 
 class FallAgent(Agent):
@@ -11,7 +12,17 @@ class FallAgent(Agent):
         self.confidence = None
         self.mobility_resources = None
         self.confidence_resources = None
-        self.cenergy = None
+        self.current_energy = None
+
+    def generator(self, tx, intf, params):
+        # generate a random set of parameters based on a distribution with mean set by params
+        [mobility, confidence, energy] = params
+        self.mobility = normal(mobility, 0.05)  # draw from normal distribution centred on given value
+        self.energy = normal(energy, 0.05)
+        self.confidence = normal(confidence, 0.05)
+        # Add agent with params to ind in graph with resources starting at 0
+        intf.addagent(tx, {"name": "Ind"}, "Agent", {"mob": self.mobility, "conf": self.confidence, "mob_res": 0,
+                                                     "conf_res": 0, "energy": self.energy}, "name")
 
     def perception(self, tx, intf):
         super(FallAgent, self).perception(tx, intf)
@@ -27,6 +38,7 @@ class FallAgent(Agent):
                     valid_edges = valid_edges + edge
         else:
             self.energy = intf.getnodevalue(tx, self.id, "energy", "Agent")
+            self.current_energy = self.energy
             for edge in edges:
                 if self.energy > [-edge["energy"] - edge.end_node["energy"]]:
                     valid_edges = valid_edges + edge
@@ -64,20 +76,27 @@ class FallAgent(Agent):
         if "modrm" in choice.end_node.keys():
             intf.updateagent(tx, self.id, "mob_res", choice.end_node["modrm"]+self.mobility)
         if "energy" in choice.end_node.keys():
-            intf.updateagent(tx, self.id, "energy", choice.end_node["energy"]+self.cenergy)
-            self.cenergy = choice.end_node["energy"]+self.cenergy
+            intf.updateagent(tx, self.id, "energy", choice.end_node["energy"] + self.current_energy)
+            self.current_energy = choice.end_node["energy"] + self.current_energy
         # update incoming edge worth
         worth = 0
-        if self.energy < self.cenergy:
+        if self.energy < self.current_energy:
             worth = worth - 1
-        elif self.energy > self.cenergy:
+        elif self.energy > self.current_energy:
             worth = worth + 1
         intf.updateedge(tx, choice, "worth", choice["worth"]+worth, uid="name")
 
     def payment(self, tx, intf):
         super(FallAgent, self).payment(tx, intf)
-        # TODO: deduct energy used in move
-        # TODO: mod variables based on edges
+        # Deduct energy used on edge
+        if "energy" in self.choice.keys():
+            intf.updateagent(tx, self.id, "energy", self.choice["energy"] + self.current_energy)
+            self.current_energy = self.choice["energy"] + self.current_energy
+        # mod variables based on edges
+        if "modm" in self.choice.keys():
+            intf.updateagent(tx, self.id, "mobility", self.choice["modm"]+self.mobility)
+        if "modc" in self.choice.key():
+            intf.updateagent(tx, self.id, "confidence", self.choice["modc"]+self.confidence)
 
     def move(self, tx, intf):
         super(FallAgent, self).move(tx, intf)

@@ -19,8 +19,8 @@ if __name__ == '__main__':
             for node in nodes:
                 agents = ses.run("MATCH (n:Agent)-[r:LOCATED]->(a:Node) "
                                  "WHERE a." + nuid + "={id} "
-                                 "RETURN n." + nuid + ", n.switch", id=node).values()
-                agents = [FallAgent(ag[0], [ag[1]]) for ag in agents]
+                                 "RETURN n.id", id=node).values()
+                agents = [FallAgent(ag[0]) for ag in agents]
                 # TODO: Pass in ModelAgent as class rather than hard code it. Add in check that class is a subclass of
                 #  Agent
                 for agent in agents:
