@@ -1,5 +1,5 @@
 from neo4j import GraphDatabase
-from Toy_Agent import ToyAgent
+from Fall_agent import FallAgent
 from Interface import Interface
 
 if __name__ == '__main__':
@@ -11,7 +11,7 @@ if __name__ == '__main__':
     with dri.session() as ses:
         tx = ses.begin_transaction()
         res = tx.run("MATCH (a:Node) "
-                     "RETURN a."+ nuid +"")
+                     "RETURN a." + nuid + "")
         tx.close()
         nodes = [v[0] for v in res.values()]
         clock = 0
@@ -29,6 +29,7 @@ if __name__ == '__main__':
                           "SET a.time = a.time + 1 "
                           "RETURN a.time")
             temp = res.values()
+            print(temp)
             clock = temp[0][0]
             print("T: " + clock.__str__())
     dri.close()

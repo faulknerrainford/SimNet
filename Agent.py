@@ -35,9 +35,9 @@ class Agent(ABC):
             tx.run("MATCH (n:Agent)-[r:LOCATED]->() "
                    "WHERE n.id = {id} "
                    "DELETE r", id=self.id)
-            new = self.choice.end_node["id"]
+            new = self.choice.end_node[self.nuid]
             tx.run("MATCH (n:Agent), (a:Node) "
                    "WHERE n.id={id} AND a." + self.nuid + "={new} "
                    "CREATE (n)-[r:LOCATED]->(a)", id=self.id, new=new)
-            self.payment(tx, intf, choice)
+            self.payment(tx, intf)
             self.learn(tx, intf, self.choice)

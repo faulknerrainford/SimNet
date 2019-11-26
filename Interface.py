@@ -41,7 +41,7 @@ class Interface:
             query = "MATCH (a:" + label + ") ""WHERE a." + uid + "={node} ""RETURN a." + value
         else:
             query = "MATCH (a:Node) ""WHERE a." + uid + "={node} ""RETURN a." + value
-        tx.run(query, node=node, value=value)
+        return tx.run(query, node=node).value()[0]
 
     @staticmethod
     def getnodevector(node):
@@ -73,11 +73,7 @@ class Interface:
         if not uid:
             uid = "id"
         query = "MATCH (a:Agent) ""WHERE a." + uid + "={node} ""SET a." + prop + "={value}"
-        tx.run(query, node=node[uid], value=value)
-        print(node[uid])
-        print(prop)
-        print(node[prop])
-        print(value)
+        tx.run(query, node=node, value=value)
 
     @staticmethod
     def deleteagent(tx, agent, uid=None):
@@ -91,13 +87,16 @@ class Interface:
         if not uid:
             uid = "id"
         query = "MATCH (n:"+label+") ""WITH n ""ORDER BY n.id DESC ""RETURN n.id"
-        highest_id = tx.run(query).values()[0][0]
-        agent_id = highest_id + 1
-        query = "CREATE (a:"+label+" {id:"+agent_id
+        highest_id = tx.run(query).values()
+        if highest_id:
+            agent_id = highest_id[0][0] + 1
+        else:
+            agent_id = 0
+        query = "CREATE (a:" + label + " {id:" + str(agent_id)
         for param in params:
-            query = query + ", " + param.key() + ":" + param.value()
+            query = query + ", " + param + ":" + str(params[param])
         query = query + "})-[r:LOCATED]->(n)"
-        tx.run("MATCH (n:Node) ""WHERE n." + uid + "=" + node[uid] + " " + query)
+        tx.run("MATCH (n:Node) ""WHERE n." + uid + "= '" + node[uid] + "' " + query)
 
         # TODO: Integrate toy functionality back in by updating toy files to use new system
 
