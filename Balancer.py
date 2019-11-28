@@ -13,37 +13,16 @@ class FlowReaction:
 
 
 if __name__ == '__main__':
-    rules = ["MATCH ()-[:LOCATED]->(a) "
-             "WITH a, count(*) AS num "
-             "WHERE num > 2 "
-             "MATCH (a)-[r:REACHES]->() "
-             "WHERE r.cost > 0 "
-             "SET r.cost = r.cost - 1",
-             "MATCH (a)-[:LOCATED]->(a) "
-             "WITH a, count(*) AS num "
-             "WHERE num < 1 "
-             "MATCH ()-[r:REACHES]->(a) "
-             "WHERE r.cost > 0 "
-             "SET r.cost = r.cost - 1",
-             "MATCH ()-[:LOCATED]->(a) "
-             "WITH a, count(*) AS num "
-             "WHERE num < 1 "
-             "MATCH ()-[r:REACHES]->(a) "
-             "WHERE r.cost > 0 "
-             "SET r.cost = r.cost - 1",
-             "MATCH (a:Node) "
-             "WITH a "
-             "WHERE a.funds < a.payout "
-             "MATCH (a)-[r:REACHES]->() "
-             "WHERE r.cost < 160 "
-             "SET r.cost = r.cost + 1",
-             "MATCH ()-[:LOCATED]->(a:Node)  "
-             "WITH a, count(*) AS num "
-             "WHERE a.funds < a.payout AND num < 1 "
-             "SET a.payout = a.payout - 1",
-             "MATCH (a:Node) "
-             "WHERE a.funds > 2*a.payout "
-             "SET a.payout = a.payout + 1"
+    rules = ["MATCH (n:Agent)-[r:LOCATED]->(m:Node) "
+             "WHERE m.name='Hos' "
+             "WITH n "
+             "ORDER BY n.mob "
+             "SKIP 4 "
+             "LIMIT 1 "
+             "WITH n.mob as lim "
+             "MATCH (m:Node) "
+             "WHERE m.name='Hos' "
+             "SET m.discharged=lim "
              ]
     flowreaction = FlowReaction(rules)
     clock = 0
