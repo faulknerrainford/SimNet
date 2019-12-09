@@ -68,10 +68,14 @@ class Monitor:
             self.orecord = self.nrecord
             self.clock = self.clock + 1
             # Update plot 1
-            # TODO: Change plot 1 to display average number of falls in patients in care
-            # TODO: Add data to below y values
-            self.y11 = append(self.y11,)
-            self.y12 = append(self.y12, )
+            mb = txl.run("MATCH (n:Agent) "
+                         "WHERE n.switch > 0.5 "
+                         "RETURN count(*)").values()[0][0]
+            tot = txl.run("MATCH (n:Agent) "
+                          "RETURN count(*)").values()[0][0]
+            mc = tot - mb
+            self.y11 = append(self.y11, mb)
+            self.y12 = append(self.y12, mc)
             self.t = append(self.t, ctime)
             self.x = ctime
             self.p11.set_data(self.t, self.y11)
@@ -81,13 +85,11 @@ class Monitor:
                 self.p12.axes.set_xlim(0.0, self.x + 1.0)
                 [self.p2[nid].axes.set_xlim(0.0, self.x + 1.0) for nid in range(self.nodes)]
                 self.xmax = self.x
-            # TODO: Reset max y based on new data values
-            self.y = max([])
+            self.y = max([mb, mc])
             if self.y > self.ymax1 - 1.0:
                 self.p11.axes.set_ylim(0.0, self.y + 1.0)
                 self.p12.axes.set_ylim(0.0, self.y + 1.0)
             # Update plot 2
-            # TODO: Update nodes to use names correctly and display legend
             resl = txl.run("MATCH ()-[:LOCATED]->(n:Node) "
                            "RETURN n.id, count(*)").values()
             # loop assigning counts to correct data

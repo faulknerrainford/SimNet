@@ -20,6 +20,7 @@ with dri.session() as ses:
     ses.run("CREATE (a:Node {name:'PT', energy:-0.8, modm:0.3, modc:0.3})")
     ses.run("CREATE (a:Node {name:'Care', time:'t'})")
     ses.run("CREATE (a:Node {name:'Resource', energy:-0.5, modrm:0.2})")
+    # TODO: Add GP to system
     # Paths between nodes
     ses.run("MATCH (a), (b) "
             "WHERE a.name='Ind' AND b.name='Hos' "

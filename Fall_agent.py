@@ -14,6 +14,8 @@ class FallAgent(Agent):
         self.mobility_resources = None
         self.confidence_resources = None
         self.current_energy = None
+        self.log = None
+        # TODO: Add wellbeing to system
 
     def generator(self, tx, intf, params):
         # generate a random set of parameters based on a distribution with mean set by params
@@ -24,6 +26,8 @@ class FallAgent(Agent):
         # Add agent with params to ind in graph with resources starting at 0
         intf.addagent(tx, {"name": "Ind"}, "Agent", {"mob": self.mobility, "conf": self.confidence, "mob_res": 0,
                                                      "conf_res": 0, "energy": self.energy}, "name")
+        time = tx.run("MATCH (a:Clock) RETURN a.time").values()
+        self.log = [("CREATED", time)]
 
     @staticmethod
     def positive(num):
@@ -49,6 +53,7 @@ class FallAgent(Agent):
             elif 1 < self.mobility and "Ind" in destinations:
                 # select "Ind" edge as only choice
                 valid_edges = [edges[destinations.index("Ind")]]
+            # TODO: Add variation in fall severity
             elif random() < exp(-3*self.mobility) and self.view[0]["name"] != "Hos":
                 valid_edges = [edges[destinations.index("Hos")]]
             elif self.view[0]["name"] == "Hos":
@@ -73,6 +78,7 @@ class FallAgent(Agent):
         self.confidence = intf.getnodevalue(tx, self.id, "conf", "Agent")
         self.mobility_resources = intf.getnodevalue(tx, self.id, "mob_res", "Agent")
         self.confidence_resources = intf.getnodevalue(tx, self.id, "conf_res", "Agent")
+        self.log = intf.getnodevalue(tx, self.id, "log", "Agent")
         if len(self.view[1:]) < 2:
             if self.view[1:]:
                 choice = self.view[1:][0]
@@ -125,6 +131,7 @@ class FallAgent(Agent):
         #     elif self.energy > self.current_energy:
         #         worth = worth + 1
         #     intf.updateedge(tx, choice, "worth", choice["worth"] + worth, uid="name")
+        # TODO: Update log to add fall, leaving hospital
 
     def payment(self, tx, intf):
         super(FallAgent, self).payment(tx, intf)
