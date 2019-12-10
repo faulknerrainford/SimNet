@@ -15,7 +15,8 @@ class FallAgent(Agent):
         self.confidence_resources = None
         self.current_energy = None
         self.log = None
-        # TODO: Add wellbeing to system
+        self.fall = False
+        self.wellbeing = None
 
     def generator(self, tx, intf, params):
         # generate a random set of parameters based on a distribution with mean set by params
@@ -23,9 +24,11 @@ class FallAgent(Agent):
         self.mobility = normal(mobility, 0.05)  # draw from normal distribution centred on given value
         self.energy = normal(energy, 0.05)
         self.confidence = normal(confidence, 0.05)
+        self.wellbeing = "At risk"
         # Add agent with params to ind in graph with resources starting at 0
         intf.addagent(tx, {"name": "Ind"}, "Agent", {"mob": self.mobility, "conf": self.confidence, "mob_res": 0,
-                                                     "conf_res": 0, "energy": self.energy}, "name")
+                                                     "conf_res": 0, "energy": self.energy, "wellbeing": self.wellbeing},
+                      "name")
         time = tx.run("MATCH (a:Clock) RETURN a.time").values()
         self.log = [("CREATED", time)]
 
@@ -55,6 +58,7 @@ class FallAgent(Agent):
                 valid_edges = [edges[destinations.index("Ind")]]
             # TODO: Add variation in fall severity
             elif random() < exp(-3*self.mobility) and self.view[0]["name"] != "Hos":
+                self.fall = True
                 valid_edges = [edges[destinations.index("Hos")]]
             elif self.view[0]["name"] == "Hos":
                 if self.mobility > self.view[0]["discharged"]:
@@ -106,23 +110,48 @@ class FallAgent(Agent):
         super(FallAgent, self).learn(tx, intf, choice)
         # modify mob, conf, res and energy based on new node
         if "modm" in choice.end_node:
-            intf.updateagent(tx, self.id, "mob", self.positive(normal(choice.end_node["modm"], 0.05) + self.mobility))
+            self.mobility = self.positive(normal(choice.end_node["modm"], 0.05) + self.mobility)
+            intf.updateagent(tx, self.id, "mob", self.mobility)
+            # check for updates to wellbeing and log any changes
+            if self.mobility == 0:
+                if self.wellbeing != "Fallen":
+                    self.wellbeing = "Fallen"
+                    intf.updateagent(tx, self.id, "wellbeing", self.wellbeing)
+                    clock = tx.run("MATCH (a:Clock) "
+                                   "RETURN a.time").values()[0][0]
+                    self.log = self.log +[("Fallen", clock)]
+            elif self.mobility > 1:
+                if self.wellbeing != "Healthy":
+                    self.wellbeing = "Healthy"
+                    intf.updateagent(tx, self.id, "wellbeing", self.wellbeing)
+                    clock = tx.run("MATCH (a:Clock) "
+                                   "RETURN a.time").values()[0][0]
+                    self.log = self.log +[("Healthy", clock)]
+            elif self.mobility <= 1:
+                if self.wellbeing == "Healthy":
+                    self.wellbeing = "At risk"
+                    intf.updateagent(tx, self.id, "wellbeing", self.wellbeing)
+                    clock = tx.run("MATCH (a:Clock) "
+                                   "RETURN a.time").values()[0][0]
+                    self.log = self.log +[("At risk", clock)]
+
         if "modc" in choice.end_node:
-            intf.updateagent(tx, self.id, "conf", self.positive(normal(choice.end_node["modc"], 0.05) +
-                                                                self.confidence))
+            self.confidence = self.positive(normal(choice.end_node["modc"], 0.05) + self.confidence)
+            intf.updateagent(tx, self.id, "conf", self.confidence)
         if "modrc" in choice.end_node:
-            intf.updateagent(tx, self.id, "conf_res",
-                             self.positive(normal(choice.end_node["modrc"], 0.05) + self.confidence_resources))
+            self.confidence_resources = self.positive(normal(choice.end_node["modrc"], 0.05) + self.confidence_resources)
+            intf.updateagent(tx, self.id, "conf_res", self.confidence_resources)
         if "modrm" in choice.end_node:
-            intf.updateagent(tx, self.id, "mob_res", self.positive(normal(choice.end_node["modrm"], 0.05) +
-                                                                   self.mobility))
+            self.mobility_resources = self.positive(normal(choice.end_node["modrm"], 0.05) + self.mobility)
+            intf.updateagent(tx, self.id, "mob_res", self.mobility_resources)
         if "energy" in choice.end_node:
             self.current_energy = normal(choice.end_node["energy"], 0.05) + self.current_energy
             intf.updateagent(tx, self.id, "energy", self.current_energy)
+        # log going into care
         if choice.end_node["name"] == "Care":
             clock = tx.run("MATCH (a:Clock) "
                            "RETURN a.time").values()[0][0]
-            intf.updateagent(tx, self.id, "time", clock)
+            self.log = self.log + [("Care", clock)]
         # # update incoming edge worth
         # if "worth" in choice:
         #     worth = 0
@@ -131,7 +160,16 @@ class FallAgent(Agent):
         #     elif self.energy > self.current_energy:
         #         worth = worth + 1
         #     intf.updateedge(tx, choice, "worth", choice["worth"] + worth, uid="name")
-        # TODO: Update log to add fall, leaving hospital
+        # TODO: log variable falls
+        if self.fall:
+            clock = tx.run("MATCH (a:Clock) "
+                           "RETURN a.time").values()[0][0]
+            self.log = self.log + [("Fall", clock)]
+        # log discharge from hospital
+        if self.view[0]["name"] == "Hos" and choice.end_node["name"] != "Hos":
+            clock = tx.run("MATCH (a:Clock) "
+                           "RETURN a.time").values()[0][0]
+            self.log = self.log + [("Discharged", clock)]
 
     def payment(self, tx, intf):
         super(FallAgent, self).payment(tx, intf)
@@ -141,9 +179,32 @@ class FallAgent(Agent):
             intf.updateagent(tx, self.id, "energy", self.current_energy)
         # mod variables based on edges
         if "modm" in self.choice:
-            intf.updateagent(tx, self.id, "mob", self.positive(normal(self.choice["modm"], 0.05) + self.mobility))
+            self.mobility = self.positive(normal(self.choice["modm"], 0.05) + self.mobility)
+            intf.updateagent(tx, self.id, "mob", self.mobility)
+            if self.mobility == 0:
+                if self.wellbeing != "Fallen":
+                    self.wellbeing = "Fallen"
+                    intf.updateagent(tx, self.id, "wellbeing", self.wellbeing)
+                    clock = tx.run("MATCH (a:Clock) "
+                                   "RETURN a.time").values()[0][0]
+                    self.log = self.log +[("Fallen", clock)]
+            elif self.mobility > 1:
+                if self.wellbeing != "Healthy":
+                    self.wellbeing = "Healthy"
+                    intf.updateagent(tx, self.id, "wellbeing", self.wellbeing)
+                    clock = tx.run("MATCH (a:Clock) "
+                                   "RETURN a.time").values()[0][0]
+                    self.log = self.log +[("Healthy", clock)]
+            elif self.mobility <= 1:
+                if self.wellbeing == "Healthy":
+                    self.wellbeing = "At risk"
+                    intf.updateagent(tx, self.id, "wellbeing", self.wellbeing)
+                    clock = tx.run("MATCH (a:Clock) "
+                                   "RETURN a.time").values()[0][0]
+                    self.log = self.log +[("At risk", clock)]
         if "modc" in self.choice:
-            intf.updateagent(tx, self.id, "conf", self.positive(normal(self.choice["modc"], 0.05) + self.confidence))
+            self.confidence = self.positive(normal(self.choice["modc"], 0.05) + self.confidence)
+            intf.updateagent(tx, self.id, "conf", self.confidence)
 
     def move(self, tx, intf):
         super(FallAgent, self).move(tx, intf)
