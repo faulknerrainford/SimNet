@@ -20,7 +20,7 @@ with dri.session() as ses:
     ses.run("CREATE (a:Node {name:'PT', energy:-0.8, modm:0.3, modc:0.3})")
     ses.run("CREATE (a:Node {name:'Care', time:'t'})")
     ses.run("CREATE (a:Node {name:'Resource', energy:-0.5, modrm:0.2})")
-    # TODO: Add GP to system
+    ses.run("CREATE (a:Node {name:'GP'})")
     # Paths between nodes
     ses.run("MATCH (a), (b) "
             "WHERE a.name='Ind' AND b.name='Hos' "
@@ -35,6 +35,30 @@ with dri.session() as ses:
     ses.run("MATCH (a), (b) "
             "WHERE a.name='Home' AND b.name='Home' "
             "CREATE (a)-[r:REACHES {effort:0, mobility:1, confidence:1, modm:-0.015, modc:-0.02, worth:0}]->(b)")
+    ses.run("MATCH (a), (b) "
+            "WHERE a.name='Ind' AND b.name='GP' "
+            "CREATE (a)-[r:REACHES {worth:-5, effort:0, mobility:1, confidence:1, modm:-0.1, modc:-0.025}]->(b)")
+    ses.run("MATCH (a), (b) "
+            "WHERE a.name='Home' AND b.name='GP' "
+            "CREATE (a)-[r:REACHES {worth:-5, effort:0, mobility:1, confidence:1, modm:-0.1, modc:-0.025}]->(b)")
+    ses.run("MATCH (a), (b) "
+            "WHERE a.name='PT' AND b.name='GP' "
+            "CREATE (a)-[r:REACHES {worth:-5, effort:0, mobility:1, confidence:1, modm:-0.1, modc:-0.025}]->(b)")
+    ses.run("MATCH (a), (b) "
+            "WHERE a.name='Social' AND b.name='GP' "
+            "CREATE (a)-[r:REACHES {worth:-5, effort:0, mobility:1, confidence:1, modm:-0.1, modc:-0.025}]->(b)")
+    ses.run("MATCH (a), (b) "
+            "WHERE a.name='Resources' AND b.name='GP' "
+            "CREATE (a)-[r:REACHES {worth:-5, effort:0, mobility:1, confidence:1, modm:-0.1, modc:-0.025}]->(b)")
+    ses.run("MATCH (a), (b) "
+            "WHERE a.name='GP' AND b.name='Hos' "
+            "CREATE (a)-[r:REACHES {effort:0, mobility:1, confidence:1}]->(b)")
+    ses.run("MATCH (a), (b) "
+            "WHERE a.name='GP' AND b.name='Home' "
+            "CREATE (a)-[r:REACHES {effort:0, mobility:1, confidence:1}]->(b)")
+    ses.run("MATCH (a), (b) "
+            "WHERE a.name='GP' AND b.name='PT' "
+            "CREATE (a)-[r:REACHES {effort:0.3, mobility:1, confidence:1}]->(b)")
     ses.run("MATCH (a), (b) "
             "WHERE a.name='Home' AND b.name='Social' "
             "CREATE (a)-[r:REACHES {effort:0.1, mobility:0.6, confidence:0.4, worth:1}]->(b)")
