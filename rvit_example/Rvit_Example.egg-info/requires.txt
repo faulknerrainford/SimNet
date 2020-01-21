@@ -1,0 +1,6 @@
+rvit@ git+https://github.com/matthew-egbert/rvit.git
+kivy@ git+https://github.com/kivy/kivy.git
+cython
+jinja2
+numpy
+pygame

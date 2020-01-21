@@ -21,7 +21,6 @@ class Monitor:
         self.ax1.set_title('Agent Strategies over Time')
         self.ax2.set_title('Agents of Nodes')
         self.ax1.set_ylabel("No. Agents")
-        self.ax1.set_ylabel("No. Agents")
         self.ax1.set_xlabel("Time")
         self.ax2.set_ylabel("No. Agents")
         self.ax2.set_xlabel("Time")

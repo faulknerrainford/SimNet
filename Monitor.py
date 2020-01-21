@@ -56,12 +56,12 @@ class Monitor:
     def snapshot(self, txl, ctime):
         look = txl.run("MATCH (n:Node) "
                        "WITH n "
-                       "ORDER BY n.id "
+                       "ORDER BY n.name "
                        "MATCH ()-[r:LOCATED]->(n) "
                        "WITH n, count(*) as load "
                        "MATCH (n)-[r:REACHES]->() "
-                       "WITH n, load, min(r.cost) as price "
-                       "RETURN n.id, n.payout, n.funds, load, price")
+                       "WITH n, load "
+                       "RETURN n.name, load")
         self.nrecord = look.values()
         if self.x != ctime:
             self.records[self.clock] = self.orecord

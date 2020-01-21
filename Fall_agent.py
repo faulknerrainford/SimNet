@@ -24,14 +24,13 @@ class FallAgent(Agent):
         self.mobility = normal(mobility, 0.05)  # draw from normal distribution centred on given value
         self.energy = normal(energy, 0.05)
         self.confidence = normal(confidence, 0.05)
-        self.wellbeing = "At risk"
+        self.wellbeing = "'At risk'"
         # Add agent with params to ind in graph with resources starting at 0
+        time = tx.run("MATCH (a:Clock) RETURN a.time").values()[0][0]
+        self.log = "(CREATED," + str(time) + ")"
         intf.addagent(tx, {"name": "Ind"}, "Agent", {"mob": self.mobility, "conf": self.confidence, "mob_res": 0,
-                                                     "conf_res": 0, "energy": self.energy, "wellbeing": self.wellbeing},
-                      "name")
-        time = tx.run("MATCH (a:Clock) RETURN a.time").values()
-        self.log = [("CREATED", time)]
-
+                                                     "conf_res": 0, "energy": self.energy, "wellbeing": self.wellbeing,
+                                                     "log": "'" + self.log + "'"}, "name")
     @staticmethod
     def positive(num):
         if num < 0:
@@ -68,10 +67,13 @@ class FallAgent(Agent):
                 elif self.mobility > 0.85:
                     valid_edges = [edges[destinations.index("Home")]]
             # variation in fall severity
-            elif (r := random()) < exp(-3 * self.mobility) and self.view[0]["name"] != "Hos":
+            elif (r := random()) < exp(-3 * self.mobility) and self.view[0]["name"] not in ["Hos", "PT", "Social",
+                                                                                            "Resource"]:
                 self.fall = "Sever"
                 valid_edges = [edges[destinations.index("Hos")]]
-            elif r < exp(-3 * (self.mobility - 0.1 * self.mobility)) and self.view[0]["name"] != "Hos":
+            elif r < exp(-3 * (self.mobility - 0.1 * self.mobility)) and self.view[0]["name"] not in ["Hos", "PT",
+                                                                                                      "Social",
+                                                                                                      "Resource"]:
                 self.fall = "Moderate"
                 valid_edges = [edges[destinations.index("GP")]]
             elif self.view[0]["name"] == "Hos":
@@ -99,6 +101,7 @@ class FallAgent(Agent):
         self.mobility_resources = intf.getnodevalue(tx, self.id, "mob_res", "Agent")
         self.confidence_resources = intf.getnodevalue(tx, self.id, "conf_res", "Agent")
         self.log = intf.getnodevalue(tx, self.id, "log", "Agent")
+        self.wellbeing = intf.getnodevalue(tx, self.id, "wellbeing", "Agent")
         if len(self.view[1:]) < 2:
             if self.view[1:]:
                 choice = self.view[1:][0]
@@ -125,6 +128,14 @@ class FallAgent(Agent):
     def learn(self, tx, intf, choice):
         super(FallAgent, self).learn(tx, intf, choice)
         # modify mob, conf, res and energy based on new node
+        if self.fall and self.fall != "Mild":
+            if self.wellbeing != "Fallen":
+                self.wellbeing = "Fallen"
+                intf.updateagent(tx, self.id, "wellbeing", self.wellbeing)
+                clock = tx.run("MATCH (a:Clock) "
+                               "RETURN a.time").values()[0][0]
+                self.log = self.log + ", (Fallen, " + str(clock) + ")"
+
         if "modm" in choice.end_node:
             self.mobility = self.positive(normal(choice.end_node["modm"], 0.05) + self.mobility)
             intf.updateagent(tx, self.id, "mob", self.mobility)
@@ -135,21 +146,22 @@ class FallAgent(Agent):
                     intf.updateagent(tx, self.id, "wellbeing", self.wellbeing)
                     clock = tx.run("MATCH (a:Clock) "
                                    "RETURN a.time").values()[0][0]
-                    self.log = self.log + [("Fallen", clock)]
+                    self.log = self.log + ", (Fallen, " + str(clock) + ")"
             elif self.mobility > 1:
+                print(self.wellbeing)
                 if self.wellbeing != "Healthy":
                     self.wellbeing = "Healthy"
                     intf.updateagent(tx, self.id, "wellbeing", self.wellbeing)
                     clock = tx.run("MATCH (a:Clock) "
                                    "RETURN a.time").values()[0][0]
-                    self.log = self.log + [("Healthy", clock)]
+                    self.log = self.log + ", (Healthy, " + str(clock) + ")"
             elif self.mobility <= 1:
                 if self.wellbeing == "Healthy":
                     self.wellbeing = "At risk"
                     intf.updateagent(tx, self.id, "wellbeing", self.wellbeing)
                     clock = tx.run("MATCH (a:Clock) "
                                    "RETURN a.time").values()[0][0]
-                    self.log = self.log + [("At risk", clock)]
+                    self.log = self.log + ", (At risk, " + str(clock) + ")"
         if "modc" in choice.end_node:
             self.confidence = self.positive(normal(choice.end_node["modc"], 0.05) + self.confidence)
             intf.updateagent(tx, self.id, "conf", self.confidence)
@@ -167,7 +179,7 @@ class FallAgent(Agent):
         if choice.end_node["name"] == "Care":
             clock = tx.run("MATCH (a:Clock) "
                            "RETURN a.time").values()[0][0]
-            self.log = self.log + [("Care", clock)]
+            self.log = self.log + ", (Care, " + str(clock) + ")"
         # # update incoming edge worth
         # if "worth" in choice:
         #     worth = 0
@@ -180,12 +192,13 @@ class FallAgent(Agent):
         if self.fall:
             clock = tx.run("MATCH (a:Clock) "
                            "RETURN a.time").values()[0][0]
-            self.log = self.log + [(self.fall + " Fall", clock)]
+            self.log = self.log + ", (" + self.fall + " Fall, " + str(clock) + ")"
         # log discharge from hospital
         if self.view[0]["name"] == "Hos" and choice.end_node["name"] != "Hos":
             clock = tx.run("MATCH (a:Clock) "
                            "RETURN a.time").values()[0][0]
-            self.log = self.log + [("Discharged", clock)]
+            self.log = self.log + ", (Discharged, " + str(clock) + ")"
+        intf.updateagent(tx, self.id, "log", str(self.log))
 
     def payment(self, tx, intf):
         super(FallAgent, self).payment(tx, intf)
@@ -203,21 +216,21 @@ class FallAgent(Agent):
                     intf.updateagent(tx, self.id, "wellbeing", self.wellbeing)
                     clock = tx.run("MATCH (a:Clock) "
                                    "RETURN a.time").values()[0][0]
-                    self.log = self.log + [("Fallen", clock)]
+                    self.log = self.log + ", (Fallen, " + str(clock) + ")"
             elif self.mobility > 1:
                 if self.wellbeing != "Healthy":
                     self.wellbeing = "Healthy"
                     intf.updateagent(tx, self.id, "wellbeing", self.wellbeing)
                     clock = tx.run("MATCH (a:Clock) "
                                    "RETURN a.time").values()[0][0]
-                    self.log = self.log + [("Healthy", clock)]
+                    self.log = self.log + ", (Healthy, " + str(clock) + ")"
             elif self.mobility <= 1:
                 if self.wellbeing == "Healthy":
                     self.wellbeing = "At risk"
                     intf.updateagent(tx, self.id, "wellbeing", self.wellbeing)
                     clock = tx.run("MATCH (a:Clock) "
                                    "RETURN a.time").values()[0][0]
-                    self.log = self.log + [("At risk", clock)]
+                    self.log = self.log + ", (At risk, " + str(clock) + ")"
         if "modc" in self.choice:
             self.confidence = self.positive(normal(self.choice["modc"], 0.05) + self.confidence)
             intf.updateagent(tx, self.id, "conf", self.confidence)

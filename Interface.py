@@ -25,13 +25,19 @@ class Interface:
         if not uid:
             uid = "id"
         if label == "Agent":
-            query = "MATCH (n:Agent) ""WHERE n."+uid+" = {id} ""RETURN n"
+            query = "MATCH (n:Agent) ""WHERE n." + uid + " = {id} ""RETURN n"
             results = tx.run(query, id=nodeid, lab=label).values()
         else:
-            query = "MATCH (n) ""WHERE n."+uid+" = {id} ""RETURN n"
+            query = "MATCH (n) ""WHERE n." + uid + " = {id} ""RETURN n"
             results = tx.run(query, id=nodeid).values()
         node = results[0][0]
         return node
+
+    @staticmethod
+    def getnodeagents(tx, nodeid, uid="id"):
+        query = "MATCH (a)-[r:LOCATED]->(n) ""WHERE n." + uid + " ={id} ""RETURN a"
+        results = tx.run(query, id=nodeid).values()[0]
+        return results
 
     @staticmethod
     def getnodevalue(tx, node, value, label=None, uid=None):
@@ -42,6 +48,11 @@ class Interface:
         else:
             query = "MATCH (a:Node) ""WHERE a." + uid + "={node} ""RETURN a." + value
         return tx.run(query, node=node).value()[0]
+
+    @staticmethod
+    def gettime(tx):
+        query = "MATCH (a:Clock) ""RETURN a.time"
+        return tx.run(query).value()[0][0]
 
     @staticmethod
     def getnodevector(node):

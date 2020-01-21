@@ -1,0 +1,3 @@
+[gui_scripts]
+rvit_example = rvit_example:start
+
