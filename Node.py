@@ -11,7 +11,7 @@ class Node(ABC):
         self.nuid = nuid
 
     @abstractmethod
-    def agentsready(self, tx, intf):
+    def agentsready(self, tx, intf, AgentClass):
         agents = intf.getnodeagents(tx, self)
         clock = intf.gettime(tx)
         if not self.queue or self.queue[clock]:
@@ -20,7 +20,7 @@ class Node(ABC):
                     if ag["id"] in self.queue[clock].keys():
                         agper = self.agentperception(tx, ag, intf, self.queue[clock][ag["id"]][0],
                                                      self.queue[clock][ag["id"]])
-                        ag.move(tx, intf, agper)
+                        AgentClass(ag["id"]).move(tx, intf, agper)
                 else:
                     agper = self.agentperception(tx, ag, intf)
                     ag.move(tx, intf, agper)
@@ -33,20 +33,8 @@ class Node(ABC):
             view = intf.perception(tx, agent)
             return view[1:], waittime
 
-    # TODO: Add function to queue agents on arrival at node. Triggered by agent in move function.
+    # TODO: Triggered by agent in move function.
     @abstractmethod
     def agentprediction(self, tx, agent, intf):
         view = intf.perception(tx, agent)
         return view
-
-        # TODO:
-        #  Subclass of fall nodes
-        #  Takes options and checks for hospital
-        #  Check for fall
-        #  Check options available to agent
-        #  Check for falls
-        #  if fall return hos or gp
-        #  return time and referrals for hos or gp
-        #  Agent will check energy and return queue time based on perception or choice
-        #  include how long they queued in perception
-        #  return (options, wait time past, wait time future, fall, referral)

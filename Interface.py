@@ -17,7 +17,6 @@ class Interface:
             node = results[0][0]
             edges = [edge[1]for edge in results]
             results = [node] + edges
-        # TODO: Check vectors match expected lengths, in all functions
         return results
 
     @staticmethod

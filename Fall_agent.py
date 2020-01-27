@@ -1,7 +1,5 @@
 from Agent import Agent
-from random import random
 from numpy.random import normal
-from numpy import exp
 
 
 class FallAgent(Agent):
@@ -31,6 +29,7 @@ class FallAgent(Agent):
         intf.addagent(tx, {"name": "Ind"}, "Agent", {"mob": self.mobility, "conf": self.confidence, "mob_res": 0,
                                                      "conf_res": 0, "energy": self.energy, "wellbeing": self.wellbeing,
                                                      "log": "'" + self.log + "'"}, "name")
+
     @staticmethod
     def positive(num):
         if num < 0:
@@ -47,50 +46,15 @@ class FallAgent(Agent):
         self.energy = intf.getnodevalue(tx, self.id, "energy", "Agent")
         self.current_energy = self.energy
         if self.view:
-            destinations = [edge.end_node["name"] for edge in edges]
-            if self.mobility <= 0:
-                if "Care" in destinations and self.mobility <= 0:
-                    # select care edge as only choice
-                    valid_edges = [edges[destinations.index("Care")]]
-            elif 1 < self.mobility and "Ind" in destinations:
-                # select "Ind" edge as only choice
-                valid_edges = [edges[destinations.index("Ind")]]
-            # GP evaluation
-            elif self.view[0]["name"] == "GP":
-                # GP sends to Hospital
-                if self.mobility < 0.6:
-                    valid_edges = [edges[destinations.index("Hos")]]
-                # GP sends to PT
-                elif self.mobility >= 0.6:
-                    valid_edges = [edges[destinations.index("PT")]]
-                # GP sends home
-                elif self.mobility > 0.85:
-                    valid_edges = [edges[destinations.index("Home")]]
-            # variation in fall severity
-            elif (r := random()) < exp(-3 * self.mobility) and self.view[0]["name"] not in ["Hos", "PT", "Social",
-                                                                                            "Resource"]:
-                self.fall = "Sever"
-                valid_edges = [edges[destinations.index("Hos")]]
-            elif r < exp(-3 * (self.mobility - 0.1 * self.mobility)) and self.view[0]["name"] not in ["Hos", "PT",
-                                                                                                      "Social",
-                                                                                                      "Resource"]:
-                self.fall = "Moderate"
-                valid_edges = [edges[destinations.index("GP")]]
-            elif self.view[0]["name"] == "Hos":
-                if self.mobility > self.view[0]["discharged"]:
-                    valid_edges = [edges[destinations.index("Home")]]
-            else:
-                if r < exp(-3 * (self.mobility - 0.3 * self.mobility)) and self.view[0]["name"] != "Hos":
-                    self.fall = "Mild"
-                for edge in edges:
-                    if not edge.end_node["name"] in ["Care", "Ind", "Hos"]:
-                        cost = 0
-                        if edge["energy"]:
-                            cost = cost + edge["energy"]
-                        if edge.end_node["energy"]:
-                            cost = cost + edge.end_node["energy"]
-                        if self.energy > -cost:
-                            valid_edges = valid_edges + [edge]
+            for edge in edges:
+                if not edge.end_node["name"] in ["Care", "Ind", "Hos"]:
+                    cost = 0
+                    if edge["energy"]:
+                        cost = cost + edge["energy"]
+                    if edge.end_node["energy"]:
+                        cost = cost + edge.end_node["energy"]
+                    if self.energy > -cost:
+                        valid_edges = valid_edges + [edge]
         self.view[1:] = valid_edges
 
     def choose(self, tx, intf):
@@ -239,3 +203,8 @@ class FallAgent(Agent):
         super(FallAgent, self).move(tx, intf)
         if intf.getnodevalue(tx, self.id, "discharged", "Agent"):
             intf.updateagent(tx, self.id, "discharged", 0)
+
+    def log(self, tx, intf, entry):
+        self.log = intf.getnodevalue(tx, self.id, "log", "Agent")
+        self.log = self.log + ", (" + entry + ")"
+        intf.updateagent(tx, self.id, "log", str(self.log))
