@@ -33,16 +33,21 @@ class Node(ABC):
                 agper = self.agentperception(tx, ag, intf)
                 print("n perc: " + str(agper))
                 FallAgent(ag["id"]).move(tx, intf, agper)
+        if self.queue and clock in self.queue.keys():
+            del self.queue[clock]
 
     @abstractmethod
     def agentperception(self, tx, agent, intf, dest=None, waittime=None):
         if dest:
-            print("dest: " + str(dest))
-            return dest
+            view = dest
         else:
-            view = intf.perception(tx, agent["id"])
-            print("view from intf: " + str(view))
-            return view[1:]
+            view = intf.perception(tx, agent["id"])[1:]
+        if type(view) == list:
+            for edge in view:
+                if "cap" in edge.end_node.keys():
+                    if edge.end_node["cap"] <= edge.end_node["load"]:
+                        view.remove(edge)
+        return view
 
     @abstractmethod
     def agentprediction(self, tx, agent, intf):

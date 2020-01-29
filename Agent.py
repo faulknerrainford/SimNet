@@ -16,7 +16,6 @@ class Agent(ABC):
 
     @abstractmethod
     def choose(self, tx, intf, perc):
-        print("start a choose: " + str(perc))
         self.perception(tx, intf, perc)
 
     @abstractmethod

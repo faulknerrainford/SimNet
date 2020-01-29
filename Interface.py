@@ -77,7 +77,7 @@ class Interface:
         if not uid:
             uid = "id"
         query = "MATCH (a:Node) ""WHERE a." + uid + "={node} ""SET a." + prop + "={value}"
-        tx.run(query, node=node[uid], value=value)
+        tx.run(query, node=node, value=value)
 
     @staticmethod
     def updateagent(tx, node, prop, value, uid=None):

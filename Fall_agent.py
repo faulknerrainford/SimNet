@@ -15,6 +15,7 @@ class FallAgent(Agent):
         self.log = None
         self.fall = ""
         self.wellbeing = None
+        self.referal = None
 
     def generator(self, tx, intf, params):
         # generate a random set of parameters based on a distribution with mean set by params
@@ -28,7 +29,7 @@ class FallAgent(Agent):
         self.log = "(CREATED," + str(time) + ")"
         intf.addagent(tx, {"name": "Home"}, "Agent", {"mob": self.mobility, "conf": self.confidence, "mob_res": 0,
                                                       "conf_res": 0, "energy": self.energy, "wellbeing": self.wellbeing,
-                                                      "log": "'" + self.log + "'"}, "name")
+                                                      "log": "'" + self.log + "'", "referal": "False"}, "name")
 
     @staticmethod
     def positive(num):
@@ -49,8 +50,8 @@ class FallAgent(Agent):
         self.mobility = intf.getnodevalue(tx, self.id, "mob", "Agent")
         self.energy = intf.getnodevalue(tx, self.id, "energy", "Agent")
         self.current_energy = self.energy
-        print("Agent energy: " + str(self.energy))
         if len(self.view) > 1:
+            print("Got here")
             for edge in edges:
                 if not edge.end_node["name"] in ["Care", "GP", "Hos"]:
                     cost = 0
@@ -75,7 +76,7 @@ class FallAgent(Agent):
         self.log = intf.getnodevalue(tx, self.id, "log", "Agent")
         self.wellbeing = intf.getnodevalue(tx, self.id, "wellbeing", "Agent")
         if len(self.view) < 2:
-            if type(self.view) == list:
+            if type(self.view) == list and self.view:
                 choice = self.view[0]
             else:
                 choice = self.view
@@ -107,7 +108,6 @@ class FallAgent(Agent):
                 clock = tx.run("MATCH (a:Clock) "
                                "RETURN a.time").values()[0][0]
                 self.log = self.log + ", (Fallen, " + str(clock) + ")"
-
         if "modm" in choice.end_node:
             self.mobility = self.positive(normal(choice.end_node["modm"], 0.05) + self.mobility)
             intf.updateagent(tx, self.id, "mob", self.mobility)
@@ -151,20 +151,8 @@ class FallAgent(Agent):
             clock = tx.run("MATCH (a:Clock) "
                            "RETURN a.time").values()[0][0]
             self.log = self.log + ", (Care, " + str(clock) + ")"
-        # # update incoming edge worth
-        # if "worth" in choice:
-        #     worth = 0
-        #     if self.energy < self.current_energy:
-        #         worth = worth - 1
-        #     elif self.energy > self.current_energy:
-        #         worth = worth + 1
-        #     intf.updateedge(tx, choice, "worth", choice["worth"] + worth, uid="name")
-        # # log variable falls
-        # if self.fall:
-        #     clock = tx.run("MATCH (a:Clock) "
-        #                    "RETURN a.time").values()[0][0]
-        #     self.log = self.log + ", (" + self.fall + " Fall, " + str(clock) + ")"
-        # log discharge from hospital
+        if "cap" in choice.end_node.keys():
+            intf.updatenode(tx, choice.end_node["name"], "load", choice.end_node["load"] + 1, "name")
         if self.view[0]["name"] == "Hos" and choice.end_node["name"] != "Hos":
             clock = tx.run("MATCH (a:Clock) "
                            "RETURN a.time").values()[0][0]

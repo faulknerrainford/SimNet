@@ -16,9 +16,25 @@ class FallNode(Node):
     def agentperception(self, tx, agent, intf, dest=None, waittime=None):
         view = super(FallNode, self).agentperception(tx, agent, intf, dest, waittime)
         if type(view) == list:
+            for edge in view:
+                if "allowed" in edge.keys():
+                    if not agent["referal"] == "True":
+                        view.remove(edge)
+                    else:
+                        allowed = edge["allowed"].split(',')
+                        if not agent["wellbeing"] in allowed:
+                            view.remove(edge)
             destinations = [edge.end_node["name"] for edge in view]
         else:
             destinations = [view.end_node["name"]]
+            if "allowed" in view.keys():
+                if not agent["referal"] == "True":
+                    view = []
+                else:
+                    allowed = view["allowed"].split(',')
+                    if not agent["wellbeing"] in allowed:
+                        view = []
+
         # If Care in options check for zero mobility
         if "Care" in destinations and agent["mob"] <= 0:
             view = [edge for edge in view if edge.end_node["name"] == "Care"]
@@ -163,6 +179,7 @@ class HosNode(FallNode):
                     intf.updateagent(tx, ag["id"], "conf",
                                      normal((self.queue[clock][ag["id"]][1] * self.confchange), 1, 1)[0])
                     intf.updateagent(tx, ag["id"], "energy", self.queue[clock][ag["id"]][1] * self.recoverrate)
+                    intf.updateagent(tx, ag["id"], "referal", "True", "name")
                     agent = FallAgent(ag["id"])
                     agent.logging(tx, intf, "Hos discharge, " + str(intf.gettime(tx)))
         super(HosNode, self).agentsready(tx, intf)
@@ -197,6 +214,8 @@ class GPNode(FallNode):
             view = [edge for edge in view if edge.end_node["name"] == "Hos"]
         else:
             view = [edge for edge in view if edge.end_node["name"] == "Home"]
+            if agent["mob"] < 0.85:
+                intf.updateagent(tx, agent["id"], "referal", "True", "name")
         return view
 
     def agentprediction(self, tx, agent, intf):
@@ -228,9 +247,14 @@ class InterventionNode(FallNode):
 
     def agentsready(self, tx, intf, agentclass="FallAgent"):
         super(FallNode, self).agentsready(tx, intf, agentclass)
+        load = len(intf.getnodeagents(tx, self.name))
+        print(type(load))
+        intf.updatenode(tx, self.name, "load", load, "name")
 
     def agentperception(self, tx, agent, intf, dest=None, waittime=None):
         view = super(InterventionNode, self).agentperception(tx, agent, intf, dest, waittime)
+        if agent["mob"] > 0.6:
+            intf.updateagent(tx, agent["id"], "referal", "False", "name")
         return view
 
     def agentprediction(self, tx, agent, intf):
