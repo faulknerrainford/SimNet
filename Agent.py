@@ -11,13 +11,13 @@ class Agent(ABC):
         self.nuid = nuid
 
     @abstractmethod
-    def perception(self, tx, intf):
-        self.view = intf.perception(tx, self.id)
+    def perception(self, tx, intf, perc):
+        self.view = perc
 
     @abstractmethod
-    def choose(self, tx, intf):
-        self.perception(tx, intf)
-
+    def choose(self, tx, intf, perc):
+        print("start a choose: " + str(perc))
+        self.perception(tx, intf, perc)
 
     @abstractmethod
     def learn(self, tx, intf, choice):
@@ -28,8 +28,8 @@ class Agent(ABC):
     def payment(self, tx, intf):
         return None
 
-    def move(self, tx, intf):
-        self.choice = self.choose(tx, intf)
+    def move(self, tx, intf, perc):
+        self.choice = self.choose(tx, intf, perc)
         if self.choice:
             # Move node based on choice using tx
             tx.run("MATCH (n:Agent)-[r:LOCATED]->() "
@@ -38,6 +38,7 @@ class Agent(ABC):
             new = self.choice.end_node[self.nuid]
             tx.run("MATCH (n:Agent), (a:Node) "
                    "WHERE n.id={id} AND a." + self.nuid + "={new} "
-                   "CREATE (n)-[r:LOCATED]->(a)", id=self.id, new=new)
+                                                          "CREATE (n)-[r:LOCATED]->(a)", id=self.id, new=new)
             self.payment(tx, intf)
             self.learn(tx, intf, self.choice)
+            return new

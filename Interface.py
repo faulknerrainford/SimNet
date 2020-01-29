@@ -33,9 +33,10 @@ class Interface:
         return node
 
     @staticmethod
-    def getnodeagents(tx, nodeid, uid="id"):
+    def getnodeagents(tx, nodeid, uid="name"):
         query = "MATCH (a)-[r:LOCATED]->(n) ""WHERE n." + uid + " ={id} ""RETURN a"
-        results = tx.run(query, id=nodeid).values()[0]
+        results = tx.run(query, id=nodeid).values()
+        results = [res[0] for res in results]
         return results
 
     @staticmethod
@@ -51,7 +52,7 @@ class Interface:
     @staticmethod
     def gettime(tx):
         query = "MATCH (a:Clock) ""RETURN a.time"
-        return tx.run(query).value()[0][0]
+        return tx.run(query).value()[0]
 
     @staticmethod
     def getnodevector(node):

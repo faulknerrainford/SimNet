@@ -1,4 +1,4 @@
-import Node
+from SN_Node import Node
 from numpy import exp, log
 from random import random
 from numpy.random import poisson, normal
@@ -8,14 +8,17 @@ from Fall_agent import FallAgent
 class FallNode(Node):
 
     def __init__(self, name, capacity=None, duration=None, queue=None):
-        super(FallNode, self).__init__(self, name, capacity, duration, queue)
+        super(FallNode, self).__init__(name, capacity, duration, queue)
 
-    def agentsready(self, tx, intf):
-        super(FallNode, self).agentsready(tx, intf, FallAgent)
+    def agentsready(self, tx, intf, agentclass="FallAgent"):
+        super(FallNode, self).agentsready(tx, intf, agentclass)
 
     def agentperception(self, tx, agent, intf, dest=None, waittime=None):
         view = super(FallNode, self).agentperception(tx, agent, intf, dest, waittime)
-        destinations = [edge.end_node["name"] for edge in view]
+        if type(view) == list:
+            destinations = [edge.end_node["name"] for edge in view]
+        else:
+            destinations = [view.end_node["name"]]
         # If Care in options check for zero mobility
         if "Care" in destinations and agent["mob"] <= 0:
             view = [edge for edge in view if edge.end_node["name"] == "Care"]
@@ -26,74 +29,100 @@ class FallNode(Node):
                 view = [edge for edge in view if edge.end_node["name"] == "Hos"]
                 # Mark a sever fall has happened in agent log
                 ag = FallAgent(agent["id"])
-                ag.log(tx, intf, "Sever Fall, " + str(intf.gettime()))
+                ag.logging(tx, intf, "Sever Fall, " + str(intf.gettime(tx)))
+                intf.updateagent(tx, agent["id"], "wellbeing", "Fallen")
             elif r < exp(-3 * (agent["mob"] - 0.1 * agent["mob"])):
                 view = [edge for edge in view if edge.end_node["name"] == "GP"]
                 # Mark a moderate fall has happened in agent log
                 ag = FallAgent(agent["id"])
-                ag.log(tx, intf, "Moderate Fall, " + str(intf.gettime()))
+                ag.logging(tx, intf, "Moderate Fall, " + str(intf.gettime(tx)))
+                intf.updateagent(tx, agent["id"], "wellbeing", "Fallen")
             elif r < exp(-3 * (agent["mob"] - 0.3 * agent["mob"])):
                 # Mark a mild fall has happened in agent log
                 ag = FallAgent(agent["id"])
-                ag.log(tx, intf, "Mild Fall, " + str(intf.gettime()))
-                return view
+                ag.logging(tx, intf, "Mild Fall, " + str(intf.gettime(tx)))
+                intf.updateagent(tx, agent["id"], "wellbeing", "Fallen")
         return view
 
     def agentprediction(self, tx, agent, intf):
-        super(FallNode, self).agentprediction(tx, agent, intf)
+        return super(FallNode, self).agentprediction(tx, agent, intf)
         # Node specific only, no general node prediction assume no queue as default, thus no prediction needed
 
 
 class HomeNode(FallNode):
 
-    def __init__(self, name="Home", mc=-0.015, recoverrate=0.3):
-        super(HomeNode, self).__init__(self, name)
+    def __init__(self, name="Home", mc=-0.015, rr=0.3, cc=-0.02):
+        super(HomeNode, self).__init__(name, queue={})
         self.mobchange = mc
-        self.recoverrate = recoverrate
+        self.recoverrate = rr
+        self.confchange = cc
 
-    def agentsready(self, tx, intf):
+    def agentsready(self, tx, intf, agentclass="FallAgent"):
         # Apply changes from waittime not dest
-        agents = intf.getnodeagents(tx, self)
+        agents = intf.getnodeagents(tx, self.name, "name")
         clock = intf.gettime(tx)
-        if self.queue[clock]:
+        if clock in self.queue.keys():
             for ag in agents:
                 if ag["id"] in self.queue[clock].keys() and self.queue[clock][ag["id"]][1]:
-                    intf.updateagent(ag["id"], "mobility",
+                    self.mobchange = intf.getnodevalue(tx, self.name, "modm", "Node", "name")
+                    self.confchange = intf.getnodevalue(tx, self.name, "modc", "Node", "name")
+                    self.recoverrate = intf.getnodevalue(tx, self.name, "energy", "Node", "name")
+                    intf.updateagent(ag["id"], "mob",
                                      normal((self.queue[clock][ag["id"]][1] * self.mobchange), 1, 1))
+                    intf.updateagent(ag["id"], "conf",
+                                     normal((self.queue[clock][ag["id"]][1] * self.confchange), 1, 1))
+                    intf.updateagent(ag["id"], "energy", self.queue[clock][ag["id"]][1] * self.recoverrate)
         super(HomeNode, self).agentsready(tx, intf)
 
     def agentperception(self, tx, agent, intf, dest=None, waittime=None):
         return super(HomeNode, self).agentperception(tx, agent, intf, dest, waittime)
 
     def agentprediction(self, tx, agent, intf):
-        view = intf.perception(tx, agent)[1:]
-        minenergy = min([edge["energy"] for edge in view])
+        view = intf.perception(tx, agent["id"])[1:]
+        minenergy = min([edge["energy"] for edge in view if edge["energy"]] + [edge.end_node["energy"] for edge in view
+                                                                               if edge.end_node["energy"]])
         recoverytime = (minenergy - agent["energy"]) / self.recoverrate
         if agent["energy"] < minenergy:
-            (falltime, falltype) = self.predictfall(agent["mobility"])
+            (falltime, falltype) = self.predictfall(agent["mob"])
             t = 1
-            mob = agent["mobility"]
+            mob = agent["mob"]
             while t < falltime:
                 mob = mob + self.mobchange
                 (nfalltime, nfalltype) = self.predictfall(mob)
                 if nfalltime + t < falltime:
                     (falltime, falltype) = (nfalltime + t, nfalltype)
                 t = t + 1
-            if falltime < recoverytime:
+            if falltime < recoverytime and not falltype == "Mild":
                 # Add agent to queue with fall
-                queuetime = falltime + intf.gettime()
+                queuetime = falltime + intf.gettime(tx)
+                intf.updateagent(tx, agent["id"], "wellbeing", "Fallen")
+                if queuetime not in self.queue.keys():
+                    self.queue[queuetime] = {}
                 if falltype == "Sever":
-                    self.queue[queuetime][agent["id"]] = ("Hos", falltime)
+                    dest = [edge for edge in view if edge.end_node["name"] == "Hos"]
+                    self.queue[queuetime][agent["id"]] = (dest[0], falltime)
+                    ag = FallAgent(agent["id"])
+                    ag.logging(tx, intf, "Sever Fall, " + str(queuetime))
                 elif falltype == "Moderate":
-                    self.queue[queuetime][agent["id"]] = ("GP", falltime)
-                elif falltype == "Mild":
-                    self.queue[queuetime][agent["id"]] = (None, falltime)
+                    dest = [edge for edge in view if edge.end_node["name"] == "GP"]
+                    self.queue[queuetime][agent["id"]] = (dest[0], falltime)
+                    ag = FallAgent(agent["id"])
+                    ag.logging(tx, intf, "Moderate Fall, " + str(queuetime))
             else:
                 # Add agent to queue with recovery
-                self.queue[recoverytime + intf.gettime()][agent["id"]] = ("Hos", recoverytime)
+                if falltype == "Mild":
+                    queuetime = falltime + intf.gettime(tx)
+                    ag = FallAgent(agent["id"])
+                    ag.logging(tx, intf, "Mild Fall, " + str(queuetime))
+                    intf.updateagent(tx, agent["id"], "wellbeing", "Fallen")
+                if recoverytime + intf.gettime(tx) not in self.queue.keys():
+                    self.queue[recoverytime + intf.gettime(tx)] = {}
+                self.queue[recoverytime + intf.gettime(tx)][agent["id"]] = (None, recoverytime)
         else:
             # Add agent to next time step - no waittime or dest
-            self.queue[intf.gettime() + 1][agent["id"]] = (None, None)
+            if intf.gettime(tx) + 1 not in self.queue.keys():
+                self.queue[intf.gettime(tx) + 1] = {}
+            self.queue[intf.gettime(tx) + 1][agent["id"]] = (None, None)
 
     @staticmethod
     def predictfall(mobility):
@@ -113,38 +142,61 @@ class HomeNode(FallNode):
 
 class HosNode(FallNode):
 
-    def __init__(self, name="Hos"):
-        super(HosNode, self).__init__(self, name)
+    def __init__(self, name="Hos", mc=-0.1, rr=0.2, cc=-0.05):
+        super(HosNode, self).__init__(name, queue={})
+        self.mobchange = mc
+        self.recoverrate = rr
+        self.confchange = cc
 
-    def agentsready(self, tx, intf):
+    def agentsready(self, tx, intf, agentclass="FallAgent"):
+        # Apply changes from waittime not dest
+        agents = intf.getnodeagents(tx, self.name)
+        clock = intf.gettime(tx)
+        if clock in self.queue.keys() and agents:
+            for ag in agents:
+                if ag["id"] in self.queue[clock].keys() and self.queue[clock][ag["id"]][1]:
+                    self.mobchange = intf.getnodevalue(tx, self.name, "modm", "Node", "name")
+                    self.confchange = intf.getnodevalue(tx, self.name, "modc", "Node", "name")
+                    self.recoverrate = intf.getnodevalue(tx, self.name, "energy", "Node", "name")
+                    intf.updateagent(tx, ag["id"], "mob",
+                                     normal((self.queue[clock][ag["id"]][1] * self.mobchange), 1, 1)[0])
+                    intf.updateagent(tx, ag["id"], "conf",
+                                     normal((self.queue[clock][ag["id"]][1] * self.confchange), 1, 1)[0])
+                    intf.updateagent(tx, ag["id"], "energy", self.queue[clock][ag["id"]][1] * self.recoverrate)
+                    agent = FallAgent(ag["id"])
+                    agent.logging(tx, intf, "Hos discharge, " + str(intf.gettime(tx)))
         super(HosNode, self).agentsready(tx, intf)
 
     def agentperception(self, tx, agent, intf, dest=None, waittime=None):
         return super(HosNode, self).agentperception(tx, agent, intf, dest, waittime)
 
     def agentprediction(self, tx, agent, intf):
+        view = super(HosNode, self).agentprediction(tx, agent, intf)[1:]
         clock = intf.gettime(tx)
-        mean = min(-9 * agent["mobility"] + 14, -9 * (agent["confres"] + agent["mobres"] + 14))
-        time = poisson(mean, 1)
-        self.queue[clock + time][agent["id"]] = ("Home", time)
+        ag = FallAgent(agent["id"])
+        ag.logging(tx, intf, "Hos admitted, " + str(clock))
+        mean = min(-9 * min(agent["mob"], 1) + 14, -9 * (min(agent["conf_res"], 1) + min(agent["mob_res"], 1)) + 14)
+        time = poisson(mean, 1)[0]
+        if clock + time not in self.queue.keys():
+            self.queue[clock + time] = {}
+        dest = [edge for edge in view if edge.end_node["name"] == "Home"]
+        self.queue[clock + time][agent["id"]] = (dest[0], time)
 
 
 class GPNode(FallNode):
 
     def __init__(self, name="GP"):
-        super(FallNode, self).__init__(self, name)
+        super(FallNode, self).__init__(name)
 
-    def agentsready(self, tx, intf):
-        super(FallNode, self).agentsready(self, tx, intf)
+    def agentsready(self, tx, intf, agentclass="FallAgent"):
+        super(FallNode, self).agentsready(tx, intf, agentclass)
 
     def agentperception(self, tx, agent, intf, dest=None, waittime=None):
         view = super(GPNode, self).agentperception(tx, agent, intf, dest, waittime)
         if agent["mob"] < 0.6:
             view = [edge for edge in view if edge.end_node["name"] == "Hos"]
-        elif agent["mob"] > 0.85:
-            view = [edge for edge in view if edge.end_node["name"] == "Home"]
         else:
-            view = [edge for edge in view if edge.end_node["name"] == "PT"]
+            view = [edge for edge in view if edge.end_node["name"] == "Home"]
         return view
 
     def agentprediction(self, tx, agent, intf):
@@ -155,10 +207,10 @@ class GPNode(FallNode):
 class SocialNode(FallNode):
 
     def __init__(self, name="Social"):
-        super(FallNode, self).__init__(self, name)
+        super(FallNode, self).__init__(name)
 
-    def agentsready(self, tx, intf):
-        super(FallNode, self).agentsready(self, tx, intf)
+    def agentsready(self, tx, intf, agentclass="FallAgent"):
+        super(FallNode, self).agentsready(tx, intf, agentclass)
 
     def agentperception(self, tx, agent, intf, dest=None, waittime=None):
         view = super(SocialNode, self).agentperception(tx, agent, intf, dest, waittime)
@@ -172,10 +224,10 @@ class SocialNode(FallNode):
 class InterventionNode(FallNode):
 
     def __init__(self, name="Intervention"):
-        super(FallNode, self).__init__(self, name)
+        super(FallNode, self).__init__(name)
 
-    def agentsready(self, tx, intf):
-        super(FallNode, self).agentsready(self, tx, intf)
+    def agentsready(self, tx, intf, agentclass="FallAgent"):
+        super(FallNode, self).agentsready(tx, intf, agentclass)
 
     def agentperception(self, tx, agent, intf, dest=None, waittime=None):
         view = super(InterventionNode, self).agentperception(tx, agent, intf, dest, waittime)
@@ -186,4 +238,16 @@ class InterventionNode(FallNode):
         # No queue so prediction not needed
 
 
-class CareNode():
+class CareNode(Node):
+
+    def __init__(self, name="Care"):
+        super(CareNode, self).__init__(name)
+
+    def agentsready(self, tx, intf, agentclass="FallAgent"):
+        super(CareNode, self).agentsready(tx, intf, agentclass)
+
+    def agentperception(self, tx, agent, intf, dest=None, waittime=None):
+        super(CareNode, self).agentperception(tx, agent, intf, dest, waittime)
+
+    def agentprediction(self, tx, agent, intf):
+        super(CareNode, self).agentprediction(tx, agent, intf)
