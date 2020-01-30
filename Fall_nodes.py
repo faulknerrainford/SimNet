@@ -248,7 +248,6 @@ class InterventionNode(FallNode):
     def agentsready(self, tx, intf, agentclass="FallAgent"):
         super(FallNode, self).agentsready(tx, intf, agentclass)
         load = len(intf.getnodeagents(tx, self.name))
-        print(type(load))
         intf.updatenode(tx, self.name, "load", load, "name")
 
     def agentperception(self, tx, agent, intf, dest=None, waittime=None):

@@ -27,11 +27,9 @@ class Node(ABC):
                     if ag["id"] in self.queue[clock].keys():
                         agper = self.agentperception(tx, ag, intf, self.queue[clock][ag["id"]][0],
                                                      self.queue[clock][ag["id"]])
-                        print("n perc: " + str(agper))
                         FallAgent(ag["id"]).move(tx, intf, agper)
             else:
                 agper = self.agentperception(tx, ag, intf)
-                print("n perc: " + str(agper))
                 FallAgent(ag["id"]).move(tx, intf, agper)
         if self.queue and clock in self.queue.keys():
             del self.queue[clock]

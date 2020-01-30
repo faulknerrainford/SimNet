@@ -69,6 +69,6 @@ with dri.session() as ses:
     # Declare a fall agent with a None id and use it to generate a set of agents into the system
     fa = FallAgent(None)
     intf = Interface()
-    for i in range(10):
+    for i in range(200):
         ses.write_transaction(fa.generator, intf, [0.8, 0.9, 1])
 dri.close()

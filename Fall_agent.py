@@ -40,7 +40,6 @@ class FallAgent(Agent):
 
     def perception(self, tx, intf, perc):
         super(FallAgent, self).perception(tx, intf, perc)
-        print("start fa perc: " + str(self.view))
         if type(self.view) == list:
             edges = self.view
         else:
@@ -51,7 +50,6 @@ class FallAgent(Agent):
         self.energy = intf.getnodevalue(tx, self.id, "energy", "Agent")
         self.current_energy = self.energy
         if len(self.view) > 1:
-            print("Got here")
             for edge in edges:
                 if not edge.end_node["name"] in ["Care", "GP", "Hos"]:
                     cost = 0
@@ -67,7 +65,6 @@ class FallAgent(Agent):
 
     def choose(self, tx, intf, perc):
         super(FallAgent, self).choose(tx, intf, perc)
-        print("Start fa choose: " + str(self.view))
         # filter out options where the agent does not reach the effort threshold
         options = []
         self.confidence = intf.getnodevalue(tx, self.id, "conf", "Agent")
