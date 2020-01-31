@@ -3,7 +3,7 @@ from numpy import exp, log
 from random import random
 from numpy.random import poisson, normal
 from Fall_agent import FallAgent
-
+import pickle
 
 class FallNode(Node):
 
@@ -254,6 +254,8 @@ class InterventionNode(FallNode):
         view = super(InterventionNode, self).agentperception(tx, agent, intf, dest, waittime)
         if agent["mob"] > 0.6:
             intf.updateagent(tx, agent["id"], "referal", "False", "name")
+            ag = FallAgent(agent["id"])
+            ag.logging(tx, intf, "(Intervention, " + intf.gettime(tx) + ")")
         return view
 
     def agentprediction(self, tx, agent, intf):
@@ -261,16 +263,17 @@ class InterventionNode(FallNode):
         # No queue so prediction not needed
 
 
-class CareNode(Node):
+class CareNode():
 
-    def __init__(self, name="Care"):
-        super(CareNode, self).__init__(name)
+    def __init__(self, rn, name="Care"):
+        self.name = "Care"
+        self.runname = rn
 
-    def agentsready(self, tx, intf, agentclass="FallAgent"):
-        super(CareNode, self).agentsready(tx, intf, agentclass)
-
-    def agentperception(self, tx, agent, intf, dest=None, waittime=None):
-        super(CareNode, self).agentperception(tx, agent, intf, dest, waittime)
-
+    # While Care is not actually a node it does have an agentprediction function which is triggered on arrival.
+    # This causes the agents log to be saved to file.
     def agentprediction(self, tx, agent, intf):
-        super(CareNode, self).agentprediction(tx, agent, intf)
+        file = open("AgentLogs" + self.runname + ".p", 'wb')
+        log = agent["log"]
+        log = "Agent " + str(agent["id"]) + ": " + log
+        pickle.dump(log, file)
+        file.close()
