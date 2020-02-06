@@ -27,7 +27,6 @@ def timesincedischarge(tx, intf):
 
 def adjustcapasity(tx, intf, history):
     currenttimes = timesincedischarge(tx, intf)
-    print(currenttimes)
     if not currenttimes and history:
         currentav = history[-1]
     elif not currenttimes:
@@ -39,11 +38,13 @@ def adjustcapasity(tx, intf, history):
     if len(history) < 20:
         return history
     else:
-        if history[0] - history[-1] < 0 and history[-1] > 14:
-            intf.updatenode(tx, "Intervention", "cap", intf.getnodevalue(tx, "Intervention", "cap") + 1)
+        if history[-5] - history[-1] < -1 and history[-1] > 5:
+            intf.updatenode(tx, "Intervention", "cap", intf.getnodevalue(tx, "Intervention", "cap", uid="name") + 1,
+                            "name")
             return []
-        elif history[0] - history[-1] > 5 and history[-10] < 14:
-            intf.updatenode(tx, "Intervention", "cap", intf.getnodevalue(tx, "Intervention", "cap") - 1)
+        elif history[-5] - history[-1] > 0 and history[-1] < 5:
+            cap = max(1, intf.getnodevalue(tx, "Intervention", "cap", uid="name") - 1)
+            intf.updatenode(tx, "Intervention", "cap", cap, "name")
             return []
         else:
             return history
@@ -63,7 +64,7 @@ if __name__ == '__main__':
     flowreaction = FallFlowReaction()
     interface = Interface()
     clock = 0
-    while clock < 1000:
+    while clock < 2000:
         dri = GraphDatabase.driver(flowreaction.uri, auth=("dancer", "dancer"))
         with dri.session() as ses:
             ses.write_transaction(flowreaction.applyrules, interface)
@@ -71,5 +72,4 @@ if __name__ == '__main__':
             time = interface.gettime(tx)
             while clock == time:
                 time = interface.gettime(tx)
-            ses.end_transaction()
         dri.close()

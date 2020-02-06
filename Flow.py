@@ -19,11 +19,11 @@ if __name__ == '__main__':
     dri = GraphDatabase.driver(uri, auth=("dancer", "dancer"))
     nuid = "name"
     intf = Interface()
-    runname = "Test"
+    runname = "careag_pset_1"
     nodes = [CareNode(runname), HosNode(), SocialNode(), GPNode(), InterventionNode(), HomeNode()]
     with dri.session() as ses:
         clock = 0
-        while clock < 1000:
+        while clock < 2000:
             for node in nodes:
                 ses.write_transaction(node.agentsready, intf)
             res = ses.run("MATCH (a:Clock) "

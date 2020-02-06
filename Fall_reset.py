@@ -17,7 +17,7 @@ with dri.session() as ses:
     ses.run("CREATE (a:Node {name:'Home', energy:0.3})")
     ses.run("CREATE (a:Node {name:'Social', energy:-0.4, modm:0.05, modc:0.2, modrc:0.2})")
     ses.run("CREATE (a:Node {name:'Intervention', energy:-0.8, modm:0.3, modc:0.3, cap:5, load:0})")
-    ses.run("CREATE (a:Node {name:'Care', time:'t'})")
+    ses.run("CREATE (a:Node {name:'Care', time:'t', interval:0})")
     ses.run("CREATE (a:Node {name:'GP'})")
     # Paths between nodes
     ses.run("MATCH (a), (b) "
@@ -69,6 +69,6 @@ with dri.session() as ses:
     # Declare a fall agent with a None id and use it to generate a set of agents into the system
     fa = FallAgent(None)
     intf = Interface()
-    for i in range(200):
+    for i in range(750):
         ses.write_transaction(fa.generator, intf, [0.8, 0.9, 1])
 dri.close()

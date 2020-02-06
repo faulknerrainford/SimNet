@@ -21,11 +21,11 @@ if __name__ == '__main__':
     intf = Interface()
     clock = 0
     fa = FallAgent(None)
-    while clock < 1000:
+    while clock < 2000:
         with dri.session() as ses:
             active = ses.read_transaction(countactiveagents)
-            if active < 200:
-                for i in range(200 - active):
+            if active < 750:
+                for i in range(750 - active):
                     ses.write_transaction(fa.generator, intf, [0.8, 0.9, 1])
             clock = ses.run("MATCH (a:Clock) "
                             "RETURN a.time").values()[0][0]

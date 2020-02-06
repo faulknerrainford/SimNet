@@ -4,6 +4,8 @@ from random import random
 from numpy.random import poisson, normal
 from Fall_agent import FallAgent
 import pickle
+from Fall_Balancer import parselog
+
 
 class FallNode(Node):
 
@@ -18,7 +20,7 @@ class FallNode(Node):
         if type(view) == list:
             for edge in view:
                 if "allowed" in edge.keys():
-                    if not agent["referal"] == "True":
+                    if not agent["referal"]:
                         view.remove(edge)
                     else:
                         allowed = edge["allowed"].split(',')
@@ -28,7 +30,7 @@ class FallNode(Node):
         else:
             destinations = [view.end_node["name"]]
             if "allowed" in view.keys():
-                if not agent["referal"] == "True":
+                if not agent["referal"]:
                     view = []
                 else:
                     allowed = view["allowed"].split(',')
@@ -179,7 +181,7 @@ class HosNode(FallNode):
                     intf.updateagent(tx, ag["id"], "conf",
                                      normal((self.queue[clock][ag["id"]][1] * self.confchange), 1, 1)[0])
                     intf.updateagent(tx, ag["id"], "energy", self.queue[clock][ag["id"]][1] * self.recoverrate)
-                    intf.updateagent(tx, ag["id"], "referal", "True", "name")
+                    intf.updateagent(tx, ag["id"], "referal", True)
                     agent = FallAgent(ag["id"])
                     agent.logging(tx, intf, "Hos discharge, " + str(intf.gettime(tx)))
         super(HosNode, self).agentsready(tx, intf)
@@ -215,7 +217,7 @@ class GPNode(FallNode):
         else:
             view = [edge for edge in view if edge.end_node["name"] == "Home"]
             if agent["mob"] < 0.85:
-                intf.updateagent(tx, agent["id"], "referal", "True", "name")
+                intf.updateagent(tx, agent["id"], "referal", True)
         return view
 
     def agentprediction(self, tx, agent, intf):
@@ -246,16 +248,16 @@ class InterventionNode(FallNode):
         super(FallNode, self).__init__(name)
 
     def agentsready(self, tx, intf, agentclass="FallAgent"):
-        super(FallNode, self).agentsready(tx, intf, agentclass)
         load = len(intf.getnodeagents(tx, self.name))
+        super(FallNode, self).agentsready(tx, intf, agentclass)
         intf.updatenode(tx, self.name, "load", load, "name")
 
     def agentperception(self, tx, agent, intf, dest=None, waittime=None):
         view = super(InterventionNode, self).agentperception(tx, agent, intf, dest, waittime)
+        ag = FallAgent(agent["id"])
+        ag.logging(tx, intf, "Intervention, " + str(intf.gettime(tx)))
         if agent["mob"] > 0.6:
             intf.updateagent(tx, agent["id"], "referal", "False", "name")
-            ag = FallAgent(agent["id"])
-            ag.logging(tx, intf, "(Intervention, " + intf.gettime(tx) + ")")
         return view
 
     def agentprediction(self, tx, agent, intf):
@@ -263,17 +265,28 @@ class InterventionNode(FallNode):
         # No queue so prediction not needed
 
 
-class CareNode():
+class CareNode:
 
-    def __init__(self, rn, name="Care"):
+    def __init__(self, rn):
         self.name = "Care"
         self.runname = rn
+        self.agents = 0
+        self.interval = 0
 
-    # While Care is not actually a node it does have an agentprediction function which is triggered on arrival.
-    # This causes the agents log to be saved to file.
-    def agentprediction(self, tx, agent, intf):
+    def agentsready(self, tx, intf):
+        agents = intf.getnodeagents(tx, "Care", "name")
         file = open("AgentLogs" + self.runname + ".p", 'wb')
-        log = agent["log"]
-        log = "Agent " + str(agent["id"]) + ": " + log
-        pickle.dump(log, file)
+        for agent in agents:
+            agl = parselog(agent["log"])
+            agint = agl[-1][1] - agl[0][1]
+            self.interval = (self.interval * self.agents + agint) / (self.agents + 1)
+            self.agents = self.agents + 1
+            intf.updatenode(tx, "Care", "interval", self.interval, "name")
+            aglog = "Agent " + str(agent["id"]) + ": " + agent["log"]
+            pickle.dump(aglog, file)
+            intf.deleteagent(tx, agent, "id")
         file.close()
+        return None
+
+    # While Care is not actually a node it does have an agentready function which is triggered on arrival.
+    # This causes the agents log to be saved to file.
