@@ -31,8 +31,5 @@ if __name__ == '__main__':
                           "RETURN a.time")
             clock = res.values()[0][0]
             print("T: " + clock.__str__())
-        for node in nodes:
-            print(node.name)
-            print(node.queue)
         ses.write_transaction(activeagentsave, nodes[1:], intf, runname)
     dri.close()

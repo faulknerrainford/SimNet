@@ -64,12 +64,12 @@ if __name__ == '__main__':
     flowreaction = FallFlowReaction()
     interface = Interface()
     clock = 0
+    dri = GraphDatabase.driver(flowreaction.uri, auth=("dancer", "dancer"))
     while clock < 2000:
-        dri = GraphDatabase.driver(flowreaction.uri, auth=("dancer", "dancer"))
         with dri.session() as ses:
             ses.write_transaction(flowreaction.applyrules, interface)
             tx = ses.begin_transaction()
             time = interface.gettime(tx)
             while clock == time:
-                time = interface.gettime(tx)
-        dri.close()
+                clock = interface.gettime(tx)
+    dri.close()
