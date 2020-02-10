@@ -272,6 +272,9 @@ class CareNode:
         self.runname = rn
         self.agents = 0
         self.interval = 0
+        self.mild = 0
+        self.moderate = 0
+        self.sever = 0
 
     def agentsready(self, tx, intf):
         agents = intf.getnodeagents(tx, "Care", "name")
@@ -280,8 +283,19 @@ class CareNode:
             agl = parselog(agent["log"])
             agint = agl[-1][1] - agl[0][1]
             self.interval = (self.interval * self.agents + agint) / (self.agents + 1)
+            for entry in agl:
+                if entry[0] == "Mild Fall":
+                    self.mild = self.mild + 1
+                if entry[0] == "Moderate Fall":
+                    self.moderate = self.moderate + 1
+                if entry[0] == "Sever Fall":
+                    self.sever = self.sever + 1
             self.agents = self.agents + 1
             intf.updatenode(tx, "Care", "interval", self.interval, "name")
+            intf.updatenode(tx, "Care", "mild", self.mild, "name")
+            intf.updatenode(tx, "Care", "moderate", self.moderate, "name")
+            intf.updatenode(tx, "Care", "sever", self.sever, "name")
+            intf.updatenode(tx, "Care", "agents", self.agents, "name")
             aglog = "Agent " + str(agent["id"]) + ": " + agent["log"]
             pickle.dump(aglog, file)
             intf.deleteagent(tx, agent, "id")

@@ -19,11 +19,12 @@ class Monitor:
         self.fig = figure()
         self.fig.suptitle("Network Stats over Time")
         # Set up subplots with titles and axes
-        self.ax1 = subplot2grid((1, 3), (0, 0))
-        self.ax2 = subplot2grid((1, 3), (0, 1))
-        self.ax3 = subplot2grid((1, 3), (0, 2))
-        self.ax1.set_title('Intervention Capacity')
-        self.ax1.set_ylabel("No. Agents")
+        self.ax1 = subplot2grid((2, 2), (0, 0))
+        self.ax2 = subplot2grid((2, 2), (0, 1))
+        self.ax3 = subplot2grid((2, 2), (1, 0))
+        self.ax4 = subplot2grid((2, 2), (1, 1))
+        self.ax1.set_title('Average falls in lifetime')
+        self.ax1.set_ylabel("No. Falls")
         self.ax1.set_xlabel("Time")
         self.ax1.set_ylim(ylims)
         self.ax1.set_xlim(xlims)
@@ -37,14 +38,33 @@ class Monitor:
         self.ax3.set_xlabel("Time")
         self.ax3.set_ylim(ylims)
         self.ax3.set_xlim(xlims)
+        self.ax4.set_title('Population Distribution')
+        self.ax4.set_ylabel("Proportion")
+        self.ax4.set_xlabel("Time")
+        self.ax4.set_ylim(ylims)
+        self.ax4.set_xlim(xlims)
         # Set data for plot 1
-        self.y1 = zeros(0)
+        self.y11 = zeros(0)
+        self.y12 = zeros(0)
+        self.y13 = zeros(0)
         self.y2 = zeros(0)
         self.y3 = zeros(0)
+        self.y41 = zeros(0)
+        self.y42 = zeros(0)
+        self.y43 = zeros(0)
         self.t = zeros(0)
-        self.p1, = self.ax1.plot(self.t, self.y1, 'b-', label="Max capacity of Intervention")
-        self.p2, = self.ax2.plot(self.t, self.y2, 'm-', label="Interval from Hospital to Intervention")
-        self.p3, = self.ax3.plot(self.t, self.y3, 'g-', label="Interval from Start to Care")
+        self.p11, = self.ax1.plot(self.t, self.y11, 'b-', label="Mild")
+        self.p12, = self.ax1.plot(self.t, self.y12, 'g-', label="Moderate")
+        self.p13, = self.ax1.plot(self.t, self.y13, 'm-', label="Sever")
+        self.ax1.legend([self.p11, self.p12, self.p13], [self.p11.get_label(),
+                                                         self.p12.get_label(), self.p13.get_label()])
+        self.p2, = self.ax2.plot(self.t, self.y2, 'm-')
+        self.p3, = self.ax3.plot(self.t, self.y3, 'g-')
+        self.p41, = self.ax4.plot(self.t, self.y41, 'b-', label="Healthy")
+        self.p42, = self.ax4.plot(self.t, self.y42, 'g-', label="At Risk")
+        self.p43, = self.ax4.plot(self.t, self.y43, 'm-', label="Fallen")
+        self.ax4.legend([self.p11, self.p12, self.p13], [self.p11.get_label(),
+                                                         self.p12.get_label(), self.p13.get_label()])
         self.xmin = 0.0
         self.xmax = 20.0
         self.ymin1 = 0.0
@@ -67,13 +87,19 @@ class Monitor:
             self.t = append(self.t, ctime)
             self.x = ctime
             # Update plot 1 - Int Cap
-            cap = txl.run("MATCH (n:Node) "
-                          "WHERE n.name={node} "
-                          "RETURN n.cap", node="Intervention").values()[0][0]
-            self.y1 = append(self.y1, cap)
-            self.p1.set_data(self.t, self.y1)
-            if cap > self.y:
-                self.y = cap
+            # Update to track average number of each type of fall for people in care.
+            [mild, moderate, sever, agents_n] = txl.run("MATCH (n:Node) "
+                                                        "WHERE n.name={node} "
+                                                        "RETURN n.mild, n.moderate, n.sever, n.agents",
+                                                        node="Care").values()[0]
+            self.y11 = append(self.y11, mild / agents_n)
+            self.p11.set_data(self.t, self.y11)
+            self.y12 = append(self.y12, moderate / agents_n)
+            self.p12.set_data(self.t, self.y12)
+            self.y13 = append(self.y13, sever / agents_n)
+            self.p13.set_data(self.t, self.y13)
+            if max([mild / agents_n, moderate / agents_n, sever / agents_n]) > self.y:
+                self.y = max([mild / agents_n, moderate / agents_n, sever / agents_n])
             # Update plot 2 - Hos to Int
             intf = Interface()
             gaps = timesincedischarge(txl, intf)
@@ -97,50 +123,58 @@ class Monitor:
             if self.y < scint:
                 self.y = scint
             self.p3.set_data(self.t, self.y3)
+            # Update plot 4
+            # TODO: Update plot showing distribution of well being in the general population.
+            [mild, moderate, sever, agents_n] = txl.run("MATCH (n:Node) "
+                                                        "WHERE n.name={node} "
+                                                        "RETURN n.mild, n.moderate, n.sever, n.agents",
+                                                        node="Care").values()[0]
+            self.y11 = append(self.y11, mild / agents_n)
+            self.p11.set_data(self.t, self.y11)
+            self.y12 = append(self.y12, moderate / agents_n)
+            self.p12.set_data(self.t, self.y12)
+            self.y13 = append(self.y13, sever / agents_n)
+            self.p13.set_data(self.t, self.y13)
+            if max([mild / agents_n, moderate / agents_n, sever / agents_n]) > self.y:
+                self.y = max([mild / agents_n, moderate / agents_n, sever / agents_n])
             # Update plot axes
             if self.x >= self.xmax - 1.00:
-                self.p1.axes.set_xlim(0.0, self.x + 1.0)
+                self.p11.axes.set_xlim(0.0, self.x + 1.0)
+                self.p12.axes.set_xlim(0.0, self.x + 1.0)
+                self.p13.axes.set_xlim(0.0, self.x + 1.0)
                 self.p2.axes.set_xlim(0.0, self.x + 1.0)
                 self.p3.axes.set_xlim(0.0, self.x + 1.0)
+                self.p41.axes.set_xlim(0.0, self.x + 1.0)
+                self.p42.axes.set_xlim(0.0, self.x + 1.0)
+                self.p43.axes.set_xlim(0.0, self.x + 1.0)
                 self.xmax = self.x
             if self.y > self.ymax1 - 1.0:
-                self.p1.axes.set_ylim(0.0, self.y + 1.0)
+                self.p11.axes.set_ylim(0.0, self.y + 1.0)
+                self.p12.axes.set_ylim(0.0, self.y + 1.0)
+                self.p13.axes.set_ylim(0.0, self.y + 1.0)
                 self.p2.axes.set_ylim(0.0, self.y + 1.0)
                 self.p3.axes.set_ylim(0.0, self.y + 1.0)
-            # Update plot 2
-            # resl = txl.run("MATCH ()-[:LOCATED]->(n:Node) "
-            #                "RETURN n.id, count(*)").values()
-            # # loop assigning counts to correct data
-            # for node in range(self.nodes):
-            #     if node in [n[0] for n in resl]:
-            #         count = [n[1] for n in resl if n[0] == node]
-            #         self.y2[node] = append(self.y2[node], count[0])
-            #         # loop assigning data to plots
-            #         self.p2[node].set_data(self.t, self.y2[node])
-            #     else:
-            #         self.y2[node] = append(self.y2[node], 0)
-            #         self.p2[node].set_data(self.t, self.y2[node])
-            # # Update and check axis (update axis on these plots)
-            # self.y = max([node[1] for node in resl])
-            # if self.y > self.ymax2 - 1.0:
-            #     [self.p2[node[0]].axes.set_ylim(0.0, self.y + 1.0) for node in resl]
+                self.p41.axes.set_ylim(0.0, self.y + 1.0)
+                self.p42.axes.set_ylim(0.0, self.y + 1.0)
+                self.p43.axes.set_ylim(0.0, self.y + 1.0)
             plt.pause(0.0005)
 
     def close(self, txc):
         print(self.clock)
-        pickle_lout = open("logs_pset_1.p", "wb")
+        run = 1
+        pickle_lout = open("logs_pset_" + str(run) + ".p", "wb")
         logs = txc.run("MATCH (a:Agent) RETURN a.log").values()
         pickle.dump(logs, pickle_lout)
         pickle_lout.close()
-        pickle_out = open("records_pset_1.p", "wb")
+        pickle_out = open("records_pset_" + str(run) + ".p", "wb")
         pickle.dump(self.records, pickle_out)
         pickle_out.close()
-        pickle_gout = open("graphdata_pset_1.p", "wb")
+        pickle_gout = open("graphdata_pset_" + str(run) + ".p", "wb")
         pickle.dump([self.y1, self.y2, self.y3, self.t], pickle_gout)
         pickle_gout.close()
         # dump graph data as strings back into the database
         # save out graph
-        plt.savefig("figure_pset_1")
+        plt.savefig("figure_contrl_" + str(run) + "")
         plt.show()
 
 
