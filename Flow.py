@@ -19,7 +19,9 @@ if __name__ == '__main__':
     dri = GraphDatabase.driver(uri, auth=("dancer", "dancer"))
     nuid = "name"
     intf = Interface()
-    runname = "careag_contrl_1"
+    runtype = "contrl"
+    runnum = 1
+    runname = "careag_" + runtype + "_" + str(runnum)
     nodes = [CareNode(runname), HosNode(), SocialNode(), GPNode(), InterventionNode(), HomeNode()]
     with dri.session() as ses:
         clock = 0
