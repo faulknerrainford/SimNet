@@ -20,7 +20,7 @@ if __name__ == '__main__':
     nuid = "name"
     intf = Interface()
     runtype = "contrl"
-    runnum = 1
+    runnum = 5
     runname = "careag_" + runtype + "_" + str(runnum)
     nodes = [CareNode(runname), HosNode(), SocialNode(), GPNode(), InterventionNode(), HomeNode()]
     with dri.session() as ses:

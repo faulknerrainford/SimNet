@@ -176,7 +176,7 @@ class Monitor:
     def close(self, txc):
         runtype = "contrl"
         print(self.clock)
-        run = 1
+        run = 5
         pickle_lout = open("logs_" + runtype + "_" + str(run) + ".p", "wb")
         logs = txc.run("MATCH (a:Agent) RETURN a.log").values()
         pickle.dump(logs, pickle_lout)
