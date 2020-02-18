@@ -16,7 +16,8 @@ with dri.session() as ses:
     ses.run("CREATE (a:Node {name:'Hos', energy:0.2, modm:-0.1, modc:-0.05})")
     ses.run("CREATE (a:Node {name:'Home', energy:0.3})")
     ses.run("CREATE (a:Node {name:'Social', energy:-0.4, modm:0.05, modc:0.2, modrc:0.2})")
-    ses.run("CREATE (a:Node {name:'Intervention', energy:-0.8, modm:0.3, modc:0.3, cap:4, load:0})")
+    ses.run("CREATE (a:Node {name:'Intervention', energy:-0.8, modm:0.3, modc:0.3, cap:3, load:0})")
+    ses.run("CREATE (a:Node {name:'InterventionOpen', energy:-0.8, modm:0.3, modc:0.3, cap:1, load:0})")
     ses.run("CREATE (a:Node {name:'Care', time:'t', interval:0, mild:0, moderate:0, sever:0, agents:0})")
     ses.run("CREATE (a:Node {name:'GP'})")
     # Paths between nodes
@@ -28,6 +29,9 @@ with dri.session() as ses:
             "CREATE (a)-[r:REACHES {worth:-5, effort:0, mobility:1, confidence:1, energy: -0.3, modm:-0.1, modc:-0.025}]->(b)")
     ses.run("MATCH (a), (b) "
             "WHERE a.name='Intervention' AND b.name='GP' "
+            "CREATE (a)-[r:REACHES {worth:-5, effort:0, mobility:1, confidence:1, energy: -0.3, modm:-0.1, modc:-0.025}]->(b)")
+    ses.run("MATCH (a), (b) "
+            "WHERE a.name='InterventionOpen' AND b.name='GP' "
             "CREATE (a)-[r:REACHES {worth:-5, effort:0, mobility:1, confidence:1, energy: -0.3, modm:-0.1, modc:-0.025}]->(b)")
     ses.run("MATCH (a), (b) "
             "WHERE a.name='Social' AND b.name='GP' "
@@ -46,14 +50,22 @@ with dri.session() as ses:
             "CREATE (a)-[r:REACHES {effort:0, mobility:1, confidence:1, worth:0}]->(b)")
     ses.run("MATCH (a), (b) "
             "WHERE a.name='Home' AND b.name='Intervention' "
-            "CREATE (a)-[r:REACHES {effort:0.3, mobility:0.5, confidence:0.5, worth:2, allowed:'Fallen',"
-            " ref:'True'}]->(b)")
+            "CREATE (a)-[r:REACHES {effort:0.3, mobility:0.5, confidence:0.5, worth:2, allowed:'Fallen', ref:'True'}]->(b)")
     ses.run("MATCH (a), (b) "
             "WHERE a.name='Intervention' AND b.name='Home' "
+            "CREATE (a)-[r:REACHES {effort:0, mobility:1, confidence:1, worth:1}]->(b)")
+    ses.run("MATCH (a), (b) "
+            "WHERE a.name='Home' AND b.name='InterventionOpen' "
+            "CREATE (a)-[r:REACHES {effort:0.3, mobility:0.5, confidence:0.5, worth:2, allowed:'At risk', ref:'False'}]->(b)")
+    ses.run("MATCH (a), (b) "
+            "WHERE a.name='InterventionOpen' AND b.name='Home' "
             "CREATE (a)-[r:REACHES {effort:0, mobility:1, confidence:1, worth:1}]->(b)")
     # Falls
     ses.run("MATCH (a), (b) "
             "WHERE a.name='Intervention' AND b.name='Hos' "
+            "CREATE (a)-[r:REACHES {effort:0, mobility:1, confidence:1, energy: -0.8, modm:-0.25, modc:-0.35}]->(b)")
+    ses.run("MATCH (a), (b) "
+            "WHERE a.name='InterventionOpen' AND b.name='Hos' "
             "CREATE (a)-[r:REACHES {effort:0, mobility:1, confidence:1, energy: -0.8, modm:-0.25, modc:-0.35}]->(b)")
     ses.run("MATCH (a), (b) "
             "WHERE a.name='Social' AND b.name='Hos' "

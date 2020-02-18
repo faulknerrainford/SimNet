@@ -19,10 +19,11 @@ if __name__ == '__main__':
     dri = GraphDatabase.driver(uri, auth=("dancer", "dancer"))
     nuid = "name"
     intf = Interface()
-    runtype = "contrl"
+    runtype = "health"
     runnum = 5
     runname = "careag_" + runtype + "_" + str(runnum)
-    nodes = [CareNode(runname), HosNode(), SocialNode(), GPNode(), InterventionNode(), HomeNode()]
+    nodes = [CareNode(runname), HosNode(), SocialNode(), GPNode(), InterventionNode(),
+             InterventionNode("InterventionOpen"), HomeNode()]
     with dri.session() as ses:
         clock = 0
         while clock < 2000:

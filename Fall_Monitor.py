@@ -174,7 +174,7 @@ class Monitor:
             plt.pause(0.0005)
 
     def close(self, txc):
-        runtype = "contrl"
+        runtype = "health"
         print(self.clock)
         run = 5
         pickle_lout = open("logs_" + runtype + "_" + str(run) + ".p", "wb")

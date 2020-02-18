@@ -20,7 +20,7 @@ class FallNode(Node):
         if type(view) == list:
             for edge in view:
                 if "allowed" in edge.keys():
-                    if not agent["referal"]:
+                    if not agent["referal"] and edge["ref"]:
                         view.remove(edge)
                     else:
                         allowed = edge["allowed"].split(',')
@@ -255,7 +255,7 @@ class InterventionNode(FallNode):
     def agentperception(self, tx, agent, intf, dest=None, waittime=None):
         view = super(InterventionNode, self).agentperception(tx, agent, intf, dest, waittime)
         ag = FallAgent(agent["id"])
-        ag.logging(tx, intf, "Intervention, " + str(intf.gettime(tx)))
+        ag.logging(tx, intf, self.name + ", " + str(intf.gettime(tx)))
         if agent["mob"] > 0.6:
             intf.updateagent(tx, agent["id"], "referal", "False", "name")
         return view
