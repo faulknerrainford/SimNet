@@ -45,9 +45,9 @@ class FallNode(Node):
         elif "Hos" in destinations and "GP" in destinations:
             if (r := random()) < exp(-3 * agent["mob"]):
                 view = [edge for edge in view if edge.end_node["name"] == "Hos"]
-                # Mark a sever fall has happened in agent log
+                # Mark a severe fall has happened in agent log
                 ag = FallAgent(agent["id"])
-                ag.logging(tx, intf, "Sever Fall, " + str(intf.gettime(tx)))
+                ag.logging(tx, intf, "Severe Fall, " + str(intf.gettime(tx)))
                 intf.updateagent(tx, agent["id"], "wellbeing", "Fallen")
             elif r < exp(-3 * (agent["mob"] - 0.1 * agent["mob"])):
                 view = [edge for edge in view if edge.end_node["name"] == "GP"]
@@ -116,11 +116,11 @@ class HomeNode(FallNode):
                 intf.updateagent(tx, agent["id"], "wellbeing", "Fallen")
                 if queuetime not in self.queue.keys():
                     self.queue[queuetime] = {}
-                if falltype == "Sever":
+                if falltype == "Severe":
                     dest = [edge for edge in view if edge.end_node["name"] == "Hos"]
                     self.queue[queuetime][agent["id"]] = (dest[0], falltime)
                     ag = FallAgent(agent["id"])
-                    ag.logging(tx, intf, "Sever Fall, " + str(queuetime))
+                    ag.logging(tx, intf, "Severe Fall, " + str(queuetime))
                 elif falltype == "Moderate":
                     dest = [edge for edge in view if edge.end_node["name"] == "GP"]
                     self.queue[queuetime][agent["id"]] = (dest[0], falltime)
@@ -274,7 +274,7 @@ class CareNode:
         self.interval = 0
         self.mild = 0
         self.moderate = 0
-        self.sever = 0
+        self.severe = 0
 
     def agentsready(self, tx, intf):
         agents = intf.getnodeagents(tx, "Care", "name")
@@ -288,13 +288,13 @@ class CareNode:
                     self.mild = self.mild + 1
                 if entry[0] == "Moderate Fall":
                     self.moderate = self.moderate + 1
-                if entry[0] == "Sever Fall":
-                    self.sever = self.sever + 1
+                if entry[0] == "Severe Fall":
+                    self.severe = self.severe + 1
             self.agents = self.agents + 1
             intf.updatenode(tx, "Care", "interval", self.interval, "name")
             intf.updatenode(tx, "Care", "mild", self.mild, "name")
             intf.updatenode(tx, "Care", "moderate", self.moderate, "name")
-            intf.updatenode(tx, "Care", "sever", self.sever, "name")
+            intf.updatenode(tx, "Care", "severe", self.severe, "name")
             intf.updatenode(tx, "Care", "agents", self.agents, "name")
             aglog = "Agent " + str(agent["id"]) + ": " + agent["log"]
             pickle.dump(aglog, file)

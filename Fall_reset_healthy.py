@@ -18,7 +18,7 @@ with dri.session() as ses:
     ses.run("CREATE (a:Node {name:'Social', energy:-0.4, modm:0.05, modc:0.2, modrc:0.2})")
     ses.run("CREATE (a:Node {name:'Intervention', energy:-0.8, modm:0.3, modc:0.3, cap:3, load:0})")
     ses.run("CREATE (a:Node {name:'InterventionOpen', energy:-0.8, modm:0.3, modc:0.3, cap:1, load:0})")
-    ses.run("CREATE (a:Node {name:'Care', time:'t', interval:0, mild:0, moderate:0, sever:0, agents:0})")
+    ses.run("CREATE (a:Node {name:'Care', time:'t', interval:0, mild:0, moderate:0, severe:0, agents:0})")
     ses.run("CREATE (a:Node {name:'GP'})")
     # Paths between nodes
     ses.run("MATCH (a), (b) "

@@ -4,6 +4,8 @@ from statistics import mean
 
 
 def parselog(log):
+    while isinstance(log, list):
+        log = log[0]
     log = log.split("), (")
     log[0] = log[0].replace("(", "")
     log[-1] = log[-1].replace(")", "")

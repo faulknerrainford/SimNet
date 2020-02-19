@@ -55,7 +55,7 @@ class Monitor:
         self.t = zeros(0)
         self.p11, = self.ax1.plot(self.t, self.y11, 'b-', label="Mild")
         self.p12, = self.ax1.plot(self.t, self.y12, 'g-', label="Moderate")
-        self.p13, = self.ax1.plot(self.t, self.y13, 'm-', label="Sever")
+        self.p13, = self.ax1.plot(self.t, self.y13, 'm-', label="Severe")
         self.ax1.legend([self.p11, self.p12, self.p13], [self.p11.get_label(),
                                                          self.p12.get_label(), self.p13.get_label()])
         self.p2, = self.ax2.plot(self.t, self.y2, 'm-')
@@ -90,19 +90,19 @@ class Monitor:
             self.x = ctime
             # Update plot 1 - Int Cap
             # Update to track average number of each type of fall for people in care.
-            [mild, moderate, sever, agents_n] = txl.run("MATCH (n:Node) "
-                                                        "WHERE n.name={node} "
-                                                        "RETURN n.mild, n.moderate, n.sever, n.agents",
-                                                        node="Care").values()[0]
+            [mild, moderate, severe, agents_n] = txl.run("MATCH (n:Node) "
+                                                         "WHERE n.name={node} "
+                                                         "RETURN n.mild, n.moderate, n.severe, n.agents",
+                                                         node="Care").values()[0]
             if agents_n:
                 self.y11 = append(self.y11, mild / agents_n)
                 self.p11.set_data(self.t, self.y11)
                 self.y12 = append(self.y12, moderate / agents_n)
                 self.p12.set_data(self.t, self.y12)
-                self.y13 = append(self.y13, sever / agents_n)
+                self.y13 = append(self.y13, severe / agents_n)
                 self.p13.set_data(self.t, self.y13)
-                if max([mild / agents_n, moderate / agents_n, sever / agents_n]) > self.y1:
-                    self.y1 = max([mild / agents_n, moderate / agents_n, sever / agents_n])
+                if max([mild / agents_n, moderate / agents_n, severe / agents_n]) > self.y1:
+                    self.y1 = max([mild / agents_n, moderate / agents_n, severe / agents_n])
                     self.p11.axes.set_ylim(0.0, self.y1 + 1.0)
                     self.p12.axes.set_ylim(0.0, self.y1 + 1.0)
                     self.p13.axes.set_ylim(0.0, self.y1 + 1.0)
