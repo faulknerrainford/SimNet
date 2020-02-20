@@ -2,9 +2,8 @@ from matplotlib.pylab import *
 from matplotlib import pyplot as plt
 import pickle
 from Fall_Balancer import parselog
-
-
-# import scipy.stats as sps
+import scipy.stats as sps
+import seaborn as sns
 
 
 def systeminterval(agent_log):
@@ -31,10 +30,10 @@ def interventioninterval(agent_log):
 
 
 def counters(agent_log):
-    mild = None
-    moderate = None
-    severe = None
-    recovery = None
+    mild = 0
+    moderate = 0
+    severe = 0
+    recovery = 0
     for entry in agent_log:
         if entry[0] == "Mild Fall":
             mild = mild + 1
@@ -48,6 +47,56 @@ def counters(agent_log):
     return [mild, moderate, severe, falls, recovery]
 
 
+# function to produce box plots overlaying violin plots for set of distributions
+def violinboxplots(plot_title, samples, labels):
+    if len(samples) != len(labels):
+        return ValueError("Samples and labels must have same length")
+    x = []
+    y = []
+    for ind in range(len(samples)):
+        x.append([labels[ind] for _ in samples[ind]])
+        y.append(samples[ind])
+    x = [item for sublist in x for item in sublist]
+    y = [item for sublist in y for item in sublist]
+    sns.violinplot(x, y, title=plot_title, palette="Pastel1")
+    plt.show()
+
+
+# function to produce effect size for a set of values
+# none: 0.5-0.56, small: 0.56-0.64, medium: 0.64-0.71, large: >0.71
+def effectsizes(sample1, sample2):
+    [u1, pvalue] = sps.mannwhitneyu(sample1, sample2)
+    m = len(sample1)
+    n = len(sample2)
+    r1 = u1 + (m * (m + 1)) / 2
+    a12 = (r1 / m - (m + 1) / 2) / n
+    if a12 < 0.5:
+        a12 = 1 - a12
+    return [pvalue, a12]
+
+
+def effectsizeset(set_title, ac, ah, ar, cc, ch, cr, c=None, h=None, r=None):
+    if not c:
+        c = ac + cc
+    if not h:
+        h = ah + ch
+    if not r:
+        r = ar + cr
+    print(set_title)
+    print("active control vs active healthy: Mann-whitey U p-value " +
+          str(effectsizes(ac, ah)[0]) + " a-value " + str(effectsizes(ac, ah)[1]))
+    print("active control vs active at risk: Mann-whitey U p-value " +
+          str(effectsizes(ac, ar)[0]) + " a-value " + str(effectsizes(ac, ar)[1]))
+    print("care control vs care healthy: Mann-whitey U p-value " +
+          str(effectsizes(cc, ch)[0]) + " a-value " + str(effectsizes(cc, ch)[1]))
+    print("care control vs care at risk: Mann-whitey U p-value " +
+          str(effectsizes(cc, cr)[0]) + " a-value " + str(effectsizes(cc, cr)[1]))
+    print("control vs healthy: Mann-whitey U p-value " +
+          str(effectsizes(c, h)[0]) + " a-value " + str(effectsizes(c, h)[1]))
+    print("control vs at risk: Mann-whitey U p-value " +
+          str(effectsizes(c, r)[0]) + " a-value " + str(effectsizes(c, r)[1]))
+
+
 # Load active agents for each system run into a set for each system, use a for loop
 aal_control = []
 aal_at_risk = []
@@ -58,7 +107,7 @@ cal_health = []
 
 for i in range(1, 6):
     pickle_in = open("logs_contrl_" + str(i) + ".p", "rb")
-    aal_control.append(pickle.load(pickle_in))
+    aal_control = aal_control + pickle.load(pickle_in)
     pickle_in.close()
     pickle_in = open("logs_atrisk_" + str(i) + ".p", "rb")
     aal_at_risk = aal_at_risk + pickle.load(pickle_in)
@@ -98,6 +147,52 @@ cal_at_risk = [parselog(agent.split(': ')[1]) for agent in cal_at_risk]
 cal_control = [parselog(agent.split(': ')[1]) for agent in cal_control]
 
 
+# # Get event counts from log
+# aal_health_ml = [counters(agent)[0] for agent in aal_health]
+# aal_health_md = [counters(agent)[1] for agent in aal_health]
+# aal_health_sv = [counters(agent)[2] for agent in aal_health]
+# aal_health_fl = [counters(agent)[3] for agent in aal_health]
+# aal_health_rc = [counters(agent)[4] for agent in aal_health]
+# cal_health_ml = [counters(agent)[0] for agent in cal_health]
+# cal_health_md = [counters(agent)[1] for agent in cal_health]
+# cal_health_sv = [counters(agent)[2] for agent in cal_health]
+# cal_health_fl = [counters(agent)[3] for agent in cal_health]
+# cal_health_rc = [counters(agent)[4] for agent in cal_health]
+# aal_control_ml = [counters(agent)[0] for agent in aal_control]
+# aal_control_md = [counters(agent)[1] for agent in aal_control]
+# aal_control_sv = [counters(agent)[2] for agent in aal_control]
+# aal_control_fl = [counters(agent)[3] for agent in aal_control]
+# aal_control_rc = [counters(agent)[4] for agent in aal_control]
+# cal_control_ml = [counters(agent)[0] for agent in cal_control]
+# cal_control_md = [counters(agent)[1] for agent in cal_control]
+# cal_control_sv = [counters(agent)[2] for agent in cal_control]
+# cal_control_fl = [counters(agent)[3] for agent in cal_control]
+# cal_control_rc = [counters(agent)[4] for agent in cal_control]
+# aal_at_risk_ml = [counters(agent)[0] for agent in aal_at_risk]
+# aal_at_risk_md = [counters(agent)[1] for agent in aal_at_risk]
+# aal_at_risk_sv = [counters(agent)[2] for agent in aal_at_risk]
+# aal_at_risk_fl = [counters(agent)[3] for agent in aal_at_risk]
+# aal_at_risk_rc = [counters(agent)[4] for agent in aal_at_risk]
+# cal_at_risk_ml = [counters(agent)[0] for agent in cal_at_risk]
+# cal_at_risk_md = [counters(agent)[1] for agent in cal_at_risk]
+# cal_at_risk_sv = [counters(agent)[2] for agent in cal_at_risk]
+# cal_at_risk_fl = [counters(agent)[3] for agent in cal_at_risk]
+# cal_at_risk_rc = [counters(agent)[4] for agent in cal_at_risk]
+
+# # # Compare fall numbers for care and both
+# effectsizeset("Fall Comparisons", aal_control_fl, aal_health_fl, aal_at_risk_fl, cal_control_fl, cal_health_fl,
+#               cal_at_risk_fl)
+# effectsizeset("Mild Fall Comparisons", aal_control_ml, aal_health_ml, aal_at_risk_ml, cal_control_ml, cal_health_ml,
+#               cal_at_risk_ml)
+# effectsizeset("Moderate Fall Comparisons", aal_control_md, aal_health_md, aal_at_risk_md, cal_control_md, cal_health_md,
+#               cal_at_risk_md)
+# effectsizeset("Severe Fall Comparisons", aal_control_sv, aal_health_sv, aal_at_risk_sv, cal_control_sv, cal_health_sv,
+#               cal_at_risk_sv)
+# # Compare "recovery" rate: number of times an agent becomes healthy
+# effectsizeset("Recovery Comparisons", aal_control_rc, aal_health_rc, aal_at_risk_rc, cal_control_rc, cal_health_rc,
+#               cal_at_risk_rc)
+
+
 # # Compare system intervals for active, care and both
 # # Calculate each agents system interval for active and care agents.
 # aal_health_si = [systeminterval(agent) for agent in aal_health]
@@ -106,13 +201,8 @@ cal_control = [parselog(agent.split(': ')[1]) for agent in cal_control]
 # cal_health_si = [systeminterval(agent) for agent in cal_health]
 # cal_control_si = [systeminterval(agent) for agent in cal_control]
 # cal_at_risk_si = [systeminterval(agent) for agent in cal_at_risk]
-# print("System Interval Comparisons:")
-# print("aal_control vs aal_health: " + str(sps.mannwhitneyu(aal_control_si, aal_health_si)[1]))
-# print("aal_control vs aal_at_risk: " + str(sps.mannwhitneyu(aal_control_si, aal_at_risk_si)[1]))
-# print("cal_control vs cal_health: " + str(sps.mannwhitneyu(cal_control_si, cal_health_si)[1]))
-# print("cal_control vs cal_at_risk: " + str(sps.mannwhitneyu(cal_control_si, cal_at_risk_si)[1]))
-# print("control vs health: " + str(sps.mannwhitneyu(aal_control_si+cal_control_si, aal_health_si+cal_health_si)[1]))
-# print("control vs at_risk: " + str(sps.mannwhitneyu(aal_control_si+cal_control_si, aal_at_risk_si+cal_at_risk_si)[1]))
+# effectsizeset("System Interval Comparisons", aal_control_si, aal_health_si, aal_at_risk_si, cal_control_si,
+#               cal_health_si, cal_at_risk_si)
 #
 # # Compare intervention intervals for both in all
 # aal_health_ii = [interventioninterval(agent) for agent in aal_health]
@@ -121,18 +211,10 @@ cal_control = [parselog(agent.split(': ')[1]) for agent in cal_control]
 # cal_health_ii = [interventioninterval(agent) for agent in cal_health]
 # cal_control_ii = [interventioninterval(agent) for agent in cal_control]
 # cal_at_risk_ii = [interventioninterval(agent) for agent in cal_at_risk]
-# print("Intervention Interval Comparisons:")
-# print("aal_control vs aal_health: " + str(sps.mannwhitneyu(aal_control_ii, aal_health_ii)[1]))
-# print("aal_control vs aal_at_risk: " + str(sps.mannwhitneyu(aal_control_ii, aal_at_risk_ii)[1]))
-# print("cal_control vs cal_health: " + str(sps.mannwhitneyu(cal_control_ii, cal_health_ii)[1]))
-# print("cal_control vs cal_at_risk: " + str(sps.mannwhitneyu(cal_control_ii, cal_at_risk_ii)[1]))
-# print("control vs health: " + str(sps.mannwhitneyu(aal_control_ii+cal_control_ii, aal_health_ii+cal_health_ii)[1]))
-# print("control vs at_risk: " + str(sps.mannwhitneyu(aal_control_ii+cal_control_ii, aal_at_risk_ii+cal_at_risk_ii)[1]))
+# effectsizeset("Intervention Interval Comparisons", aal_control_ii, aal_health_ii, aal_at_risk_ii, cal_control_ii,
+#               cal_health_ii, cal_at_risk_ii)
 
-# TODO: Compare fall numbers for care and both
-# TODO: Compare "recovery" rate: number of times an agent becomes healthy
-# Compare fall numbers for active (if nothing in previous)
-# Compare population distribution over time
+# TODO: Compare population distribution over time
 
 
 def parametersetting():
