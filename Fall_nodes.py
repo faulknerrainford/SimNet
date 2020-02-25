@@ -278,7 +278,7 @@ class CareNode:
 
     def agentsready(self, tx, intf):
         agents = intf.getnodeagents(tx, "Care", "name")
-        file = open("AgentLogs" + self.runname + ".p", 'wb')
+        file = open("AgentLogs" + self.runname + ".p", 'ab')
         for agent in agents:
             agl = parselog(agent["log"])
             agint = agl[-1][1] - agl[0][1]

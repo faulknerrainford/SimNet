@@ -41,6 +41,8 @@ def counters(agent_log):
             moderate = moderate + 1
         elif entry[0] == "Sever Fall":
             severe = severe + 1
+        elif entry[0] == "Severe Fall":
+            severe = severe + 1
         elif entry[0] == "Healthy":
             recovery = recovery + 1
     falls = mild + moderate + severe
@@ -75,22 +77,30 @@ def effectsizes(sample1, sample2):
     return [pvalue, a12]
 
 
-def effectsizeset(set_title, ac, ah, ar, cc, ch, cr, c=None, h=None, r=None):
+def effectsizeset(set_title, ac, ao, ah, ar, cc, co, ch, cr, c=None, o=None, h=None, r=None):
     if not c:
         c = ac + cc
     if not h:
         h = ah + ch
     if not r:
         r = ar + cr
+    if not o:
+        o = ao + co
     print(set_title)
+    print("active control vs active open: Mann-whitey U p-value " +
+          str(effectsizes(ac, ao)[0]) + " a-value " + str(effectsizes(ac, ao)[1]))
     print("active control vs active healthy: Mann-whitey U p-value " +
           str(effectsizes(ac, ah)[0]) + " a-value " + str(effectsizes(ac, ah)[1]))
     print("active control vs active at risk: Mann-whitey U p-value " +
           str(effectsizes(ac, ar)[0]) + " a-value " + str(effectsizes(ac, ar)[1]))
+    print("care control vs care open: Mann-whitey U p-value " +
+          str(effectsizes(cc, co)[0]) + " a-value " + str(effectsizes(cc, co)[1]))
     print("care control vs care healthy: Mann-whitey U p-value " +
           str(effectsizes(cc, ch)[0]) + " a-value " + str(effectsizes(cc, ch)[1]))
     print("care control vs care at risk: Mann-whitey U p-value " +
           str(effectsizes(cc, cr)[0]) + " a-value " + str(effectsizes(cc, cr)[1]))
+    print("control vs open: Mann-whitey U p-value " +
+          str(effectsizes(c, o)[0]) + " a-value " + str(effectsizes(c, o)[1]))
     print("control vs healthy: Mann-whitey U p-value " +
           str(effectsizes(c, h)[0]) + " a-value " + str(effectsizes(c, h)[1]))
     print("control vs at risk: Mann-whitey U p-value " +
@@ -101,13 +111,18 @@ def effectsizeset(set_title, ac, ah, ar, cc, ch, cr, c=None, h=None, r=None):
 aal_control = []
 aal_at_risk = []
 aal_health = []
+aal_open = []
 cal_control = []
 cal_at_risk = []
 cal_health = []
+cal_open = []
 
 for i in range(1, 6):
     pickle_in = open("logs_contrl_" + str(i) + ".p", "rb")
     aal_control = aal_control + pickle.load(pickle_in)
+    pickle_in.close()
+    pickle_in = open("logs_open_" + str(i) + ".p", "rb")
+    aal_open = aal_open + pickle.load(pickle_in)
     pickle_in.close()
     pickle_in = open("logs_atrisk_" + str(i) + ".p", "rb")
     aal_at_risk = aal_at_risk + pickle.load(pickle_in)
@@ -124,6 +139,13 @@ for i in range(1, 6):
         except EOFError:
             break
     pickle_in_control.close()
+    pickle_in_open = open("AgentLogscareag_open_" + str(i) + ".p", "rb")
+    while True:
+        try:
+            cal_open.append(pickle.load(pickle_in_open))
+        except EOFError:
+            break
+    pickle_in_open.close()
     pickle_in_at_risk = open("AgentLogscareag_atrisk_" + str(i) + ".p", "rb")
     while True:
         try:
@@ -138,81 +160,100 @@ for i in range(1, 6):
         except EOFError:
             break
     pickle_in_health.close()
+print(len(cal_health))
+print(len(cal_at_risk))
+print(len(cal_open))
+print(len(cal_control))
 # Parse logs of both sorts into unified format for extracting data
 aal_health = [parselog(agent[0]) for agent in aal_health]
 aal_at_risk = [parselog(agent[0]) for agent in aal_at_risk]
 aal_control = [parselog(agent[0]) for agent in aal_control]
+aal_open = [parselog(agent[0]) for agent in aal_open]
 cal_health = [parselog(agent.split(': ')[1]) for agent in cal_health]
 cal_at_risk = [parselog(agent.split(': ')[1]) for agent in cal_at_risk]
 cal_control = [parselog(agent.split(': ')[1]) for agent in cal_control]
+cal_open = [parselog(agent.split(': ')[1]) for agent in cal_open]
+
+# Get event counts from log
+aal_open_ml = [counters(agent)[0] for agent in aal_open]
+aal_open_md = [counters(agent)[1] for agent in aal_open]
+aal_open_sv = [counters(agent)[2] for agent in aal_open]
+aal_open_fl = [counters(agent)[3] for agent in aal_open]
+aal_open_rc = [counters(agent)[4] for agent in aal_open]
+cal_open_ml = [counters(agent)[0] for agent in cal_open]
+cal_open_md = [counters(agent)[1] for agent in cal_open]
+cal_open_sv = [counters(agent)[2] for agent in cal_open]
+cal_open_fl = [counters(agent)[3] for agent in cal_open]
+cal_open_rc = [counters(agent)[4] for agent in cal_open]
+aal_health_ml = [counters(agent)[0] for agent in aal_health]
+aal_health_md = [counters(agent)[1] for agent in aal_health]
+aal_health_sv = [counters(agent)[2] for agent in aal_health]
+aal_health_fl = [counters(agent)[3] for agent in aal_health]
+aal_health_rc = [counters(agent)[4] for agent in aal_health]
+cal_health_ml = [counters(agent)[0] for agent in cal_health]
+cal_health_md = [counters(agent)[1] for agent in cal_health]
+cal_health_sv = [counters(agent)[2] for agent in cal_health]
+cal_health_fl = [counters(agent)[3] for agent in cal_health]
+cal_health_rc = [counters(agent)[4] for agent in cal_health]
+aal_control_ml = [counters(agent)[0] for agent in aal_control]
+aal_control_md = [counters(agent)[1] for agent in aal_control]
+aal_control_sv = [counters(agent)[2] for agent in aal_control]
+aal_control_fl = [counters(agent)[3] for agent in aal_control]
+aal_control_rc = [counters(agent)[4] for agent in aal_control]
+cal_control_ml = [counters(agent)[0] for agent in cal_control]
+cal_control_md = [counters(agent)[1] for agent in cal_control]
+cal_control_sv = [counters(agent)[2] for agent in cal_control]
+cal_control_fl = [counters(agent)[3] for agent in cal_control]
+cal_control_rc = [counters(agent)[4] for agent in cal_control]
+aal_at_risk_ml = [counters(agent)[0] for agent in aal_at_risk]
+aal_at_risk_md = [counters(agent)[1] for agent in aal_at_risk]
+aal_at_risk_sv = [counters(agent)[2] for agent in aal_at_risk]
+aal_at_risk_fl = [counters(agent)[3] for agent in aal_at_risk]
+aal_at_risk_rc = [counters(agent)[4] for agent in aal_at_risk]
+cal_at_risk_ml = [counters(agent)[0] for agent in cal_at_risk]
+cal_at_risk_md = [counters(agent)[1] for agent in cal_at_risk]
+cal_at_risk_sv = [counters(agent)[2] for agent in cal_at_risk]
+cal_at_risk_fl = [counters(agent)[3] for agent in cal_at_risk]
+cal_at_risk_rc = [counters(agent)[4] for agent in cal_at_risk]
+
+# # Compare fall numbers for care and both
+effectsizeset("Fall Comparisons", aal_control_fl, aal_open_fl, aal_health_fl, aal_at_risk_fl, cal_control_fl,
+              cal_open_fl, cal_health_fl, cal_at_risk_fl)
+effectsizeset("Mild Fall Comparisons", aal_control_ml, aal_open_ml, aal_health_ml, aal_at_risk_ml, cal_control_ml,
+              cal_open_ml, cal_health_ml, cal_at_risk_ml)
+effectsizeset("Moderate Fall Comparisons", aal_control_md, aal_open_md, aal_health_md, aal_at_risk_md, cal_control_md,
+              cal_open_md, cal_health_md, cal_at_risk_md)
+effectsizeset("Severe Fall Comparisons", aal_control_sv, aal_open_sv, aal_health_sv, aal_at_risk_sv, cal_control_sv,
+              cal_open_sv, cal_health_sv, cal_at_risk_sv)
+# Compare "recovery" rate: number of times an agent becomes healthy
+effectsizeset("Recovery Comparisons", aal_control_rc, aal_open_rc, aal_health_rc, aal_at_risk_rc, cal_control_rc,
+              cal_open_rc, cal_health_rc, cal_at_risk_rc)
+
+# Compare system intervals for active, care and both
+# Calculate each agents system interval for active and care agents.
+aal_health_si = [systeminterval(agent) for agent in aal_health]
+aal_control_si = [systeminterval(agent) for agent in aal_control]
+aal_at_risk_si = [systeminterval(agent) for agent in aal_at_risk]
+aal_open_si = [systeminterval(agent) for agent in aal_open]
+cal_health_si = [systeminterval(agent) for agent in cal_health]
+cal_control_si = [systeminterval(agent) for agent in cal_control]
+cal_at_risk_si = [systeminterval(agent) for agent in cal_at_risk]
+cal_open_si = [systeminterval(agent) for agent in cal_open]
+effectsizeset("System Interval Comparisons", aal_control_si, aal_open_si, aal_health_si, aal_at_risk_si,
+              cal_control_si, cal_open_si, cal_health_si, cal_at_risk_si)
 
 
-# # Get event counts from log
-# aal_health_ml = [counters(agent)[0] for agent in aal_health]
-# aal_health_md = [counters(agent)[1] for agent in aal_health]
-# aal_health_sv = [counters(agent)[2] for agent in aal_health]
-# aal_health_fl = [counters(agent)[3] for agent in aal_health]
-# aal_health_rc = [counters(agent)[4] for agent in aal_health]
-# cal_health_ml = [counters(agent)[0] for agent in cal_health]
-# cal_health_md = [counters(agent)[1] for agent in cal_health]
-# cal_health_sv = [counters(agent)[2] for agent in cal_health]
-# cal_health_fl = [counters(agent)[3] for agent in cal_health]
-# cal_health_rc = [counters(agent)[4] for agent in cal_health]
-# aal_control_ml = [counters(agent)[0] for agent in aal_control]
-# aal_control_md = [counters(agent)[1] for agent in aal_control]
-# aal_control_sv = [counters(agent)[2] for agent in aal_control]
-# aal_control_fl = [counters(agent)[3] for agent in aal_control]
-# aal_control_rc = [counters(agent)[4] for agent in aal_control]
-# cal_control_ml = [counters(agent)[0] for agent in cal_control]
-# cal_control_md = [counters(agent)[1] for agent in cal_control]
-# cal_control_sv = [counters(agent)[2] for agent in cal_control]
-# cal_control_fl = [counters(agent)[3] for agent in cal_control]
-# cal_control_rc = [counters(agent)[4] for agent in cal_control]
-# aal_at_risk_ml = [counters(agent)[0] for agent in aal_at_risk]
-# aal_at_risk_md = [counters(agent)[1] for agent in aal_at_risk]
-# aal_at_risk_sv = [counters(agent)[2] for agent in aal_at_risk]
-# aal_at_risk_fl = [counters(agent)[3] for agent in aal_at_risk]
-# aal_at_risk_rc = [counters(agent)[4] for agent in aal_at_risk]
-# cal_at_risk_ml = [counters(agent)[0] for agent in cal_at_risk]
-# cal_at_risk_md = [counters(agent)[1] for agent in cal_at_risk]
-# cal_at_risk_sv = [counters(agent)[2] for agent in cal_at_risk]
-# cal_at_risk_fl = [counters(agent)[3] for agent in cal_at_risk]
-# cal_at_risk_rc = [counters(agent)[4] for agent in cal_at_risk]
-
-# # # Compare fall numbers for care and both
-# effectsizeset("Fall Comparisons", aal_control_fl, aal_health_fl, aal_at_risk_fl, cal_control_fl, cal_health_fl,
-#               cal_at_risk_fl)
-# effectsizeset("Mild Fall Comparisons", aal_control_ml, aal_health_ml, aal_at_risk_ml, cal_control_ml, cal_health_ml,
-#               cal_at_risk_ml)
-# effectsizeset("Moderate Fall Comparisons", aal_control_md, aal_health_md, aal_at_risk_md, cal_control_md, cal_health_md,
-#               cal_at_risk_md)
-# effectsizeset("Severe Fall Comparisons", aal_control_sv, aal_health_sv, aal_at_risk_sv, cal_control_sv, cal_health_sv,
-#               cal_at_risk_sv)
-# # Compare "recovery" rate: number of times an agent becomes healthy
-# effectsizeset("Recovery Comparisons", aal_control_rc, aal_health_rc, aal_at_risk_rc, cal_control_rc, cal_health_rc,
-#               cal_at_risk_rc)
-
-
-# # Compare system intervals for active, care and both
-# # Calculate each agents system interval for active and care agents.
-# aal_health_si = [systeminterval(agent) for agent in aal_health]
-# aal_control_si = [systeminterval(agent) for agent in aal_control]
-# aal_at_risk_si = [systeminterval(agent) for agent in aal_at_risk]
-# cal_health_si = [systeminterval(agent) for agent in cal_health]
-# cal_control_si = [systeminterval(agent) for agent in cal_control]
-# cal_at_risk_si = [systeminterval(agent) for agent in cal_at_risk]
-# effectsizeset("System Interval Comparisons", aal_control_si, aal_health_si, aal_at_risk_si, cal_control_si,
-#               cal_health_si, cal_at_risk_si)
-#
 # # Compare intervention intervals for both in all
 # aal_health_ii = [interventioninterval(agent) for agent in aal_health]
 # aal_control_ii = [interventioninterval(agent) for agent in aal_control]
 # aal_at_risk_ii = [interventioninterval(agent) for agent in aal_at_risk]
+# aal_open_ii = [interventioninterval(agent) for agent in aal_open]
 # cal_health_ii = [interventioninterval(agent) for agent in cal_health]
 # cal_control_ii = [interventioninterval(agent) for agent in cal_control]
 # cal_at_risk_ii = [interventioninterval(agent) for agent in cal_at_risk]
-# effectsizeset("Intervention Interval Comparisons", aal_control_ii, aal_health_ii, aal_at_risk_ii, cal_control_ii,
-#               cal_health_ii, cal_at_risk_ii)
+# cal_open_ii = [interventioninterval(agent) for agent in cal_open]
+# effectsizeset("Intervention Interval Comparisons", aal_control_ii, aal_open_ii, aal_health_ii, aal_at_risk_ii,
+#               cal_control_ii, cal_open_ii, cal_health_ii, cal_at_risk_ii)
 
 # TODO: Compare population distribution over time
 

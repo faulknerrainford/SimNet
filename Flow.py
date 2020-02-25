@@ -4,7 +4,7 @@ from Interface import Interface
 
 
 def activeagentsave(tx, activenodes, interface, rn):
-    file = open("AgentLogs" + rn + ".p", 'wb')
+    file = open("AgentLogs" + rn + ".p", 'ab')
     for anode in activenodes:
         agents = interface.getnodeagents(tx, anode.name)
         for agent in agents:
@@ -19,8 +19,8 @@ if __name__ == '__main__':
     dri = GraphDatabase.driver(uri, auth=("dancer", "dancer"))
     nuid = "name"
     intf = Interface()
-    runtype = "health"
-    runnum = 5
+    runtype = "open"
+    runnum = 1
     runname = "careag_" + runtype + "_" + str(runnum)
     nodes = [CareNode(runname), HosNode(), SocialNode(), GPNode(), InterventionNode(),
              InterventionNode("InterventionOpen"), HomeNode()]
@@ -34,5 +34,5 @@ if __name__ == '__main__':
                           "RETURN a.time")
             clock = res.values()[0][0]
             print("T: " + clock.__str__())
-        ses.write_transaction(activeagentsave, nodes[1:], intf, runname)
+        # ses.write_transaction(activeagentsave, nodes[1:], intf, runname)
     dri.close()
