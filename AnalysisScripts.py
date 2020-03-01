@@ -255,7 +255,9 @@ effectsizeset("System Interval Comparisons", aal_control_si, aal_open_si, aal_he
 # effectsizeset("Intervention Interval Comparisons", aal_control_ii, aal_open_ii, aal_health_ii, aal_at_risk_ii,
 #               cal_control_ii, cal_open_ii, cal_health_ii, cal_at_risk_ii)
 
-# TODO: Compare population distribution over time
+# violinboxplots("Recovery Comparison", [cal_control_rc, cal_open_rc], ["Control", "Open Intervention"])
+print(median(cal_control_rc))
+print(median(cal_open_rc))
 
 
 def parametersetting():
