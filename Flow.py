@@ -20,7 +20,7 @@ if __name__ == '__main__':
     nuid = "name"
     intf = Interface()
     runtype = "scarce_contrl"
-    runnum = 1
+    runnum = 4
     runname = "careag_" + runtype + "_" + str(runnum)
     nodes = [CareNode(runname), HosNode(), SocialNode(), GPNode(), InterventionNode(),
              InterventionNode("InterventionOpen"), HomeNode()]
