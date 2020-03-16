@@ -19,8 +19,8 @@ if __name__ == '__main__':
     dri = GraphDatabase.driver(uri, auth=("dancer", "dancer"))
     nuid = "name"
     intf = Interface()
-    runtype = "scarce_contrl"
-    runnum = 4
+    runtype = "scarce_dynamic"
+    runnum = 1
     runname = "careag_" + runtype + "_" + str(runnum)
     nodes = [CareNode(runname), HosNode(), SocialNode(), GPNode(), InterventionNode(),
              InterventionNode("InterventionOpen"), HomeNode()]

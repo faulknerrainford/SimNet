@@ -41,12 +41,18 @@ def adjustcapasity(tx, intf, history):
         return history
     else:
         if history[-5] - history[-1] < -1 and history[-1] > 5:
-            intf.updatenode(tx, "Intervention", "cap", intf.getnodevalue(tx, "Intervention", "cap", uid="name") + 1,
-                            "name")
+            if intf.getnodevalue(tx, "InterventionOpen", "cap", uid="name") > 0:
+                intf.updatenode(tx, "Intervention", "cap", intf.getnodevalue(tx, "Intervention", "cap", uid="name") + 1,
+                                "name")
+                intf.updatenode(tx, "InterventionOpen", "cap", intf.getnodevalue(tx, "InterventionOpen",
+                                                                                 "cap", uid="name") - 1, "name")
             return []
         elif history[-5] - history[-1] > 0 and history[-1] < 5:
-            cap = max(1, intf.getnodevalue(tx, "Intervention", "cap", uid="name") - 1)
-            intf.updatenode(tx, "Intervention", "cap", cap, "name")
+            if intf.getnodevalue(tx, "Intervention", "cap", uid="name") > 0:
+                intf.updatenode(tx, "Intervention", "cap", intf.getnodevalue(tx, "Intervention", "cap", uid="name") - 1,
+                                "name")
+                intf.updatenode(tx, "InterventionOpen", "cap", intf.getnodevalue(tx, "InterventionOpen",
+                                                                                 "cap", uid="name") + 1, "name")
             return []
         else:
             return history
