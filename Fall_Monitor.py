@@ -174,9 +174,9 @@ class Monitor:
             plt.pause(0.0005)
 
     def close(self, txc):
-        runtype = "scarce_dynamic"
+        runtype = "open50"
         print(self.clock)
-        run = 1
+        run = 4
         pickle_lout = open("logs_" + runtype + "_" + str(run) + ".p", "wb")
         logs = txc.run("MATCH (a:Agent) RETURN a.log").values()
         pickle.dump(logs, pickle_lout)
