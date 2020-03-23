@@ -174,9 +174,9 @@ class Monitor:
             plt.pause(0.0005)
 
     def close(self, txc):
-        runtype = "open50"
+        runtype = "dynamic"
         print(self.clock)
-        run = 4
+        run = 1
         pickle_lout = open("logs_" + runtype + "_" + str(run) + ".p", "wb")
         logs = txc.run("MATCH (a:Agent) RETURN a.log").values()
         pickle.dump(logs, pickle_lout)
@@ -204,7 +204,7 @@ if __name__ == '__main__':
             tx = session.begin_transaction()
             res = tx.run("MATCH (a:Clock) "
                          "RETURN a.time")
-            tx.close()
+            # tx.close()
             temp = res.values()
             if temp != clock:
                 clock = temp[0][0]

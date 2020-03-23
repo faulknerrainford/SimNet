@@ -1,9 +1,11 @@
 from neo4j import GraphDatabase
 from Interface import Interface
 from statistics import mean
+import logging
 
 
 def parselog(log):
+    logging.debug(log)
     while isinstance(log, list):
         log = log[0]
     log = log.split("), (")

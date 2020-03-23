@@ -6,6 +6,7 @@ import scipy.stats as sps
 import seaborn as sns
 import logging
 
+logging.basicConfig(filename='AnalysisScripts.log', level=logging.DEBUG)
 
 def systeminterval(agent_log):
     # work out if care or active agent based on last entry
@@ -14,6 +15,7 @@ def systeminterval(agent_log):
         return agent_log[-1][1] - agent_log[0][1]
     else:
         # system interval for active based on 2000 - create times
+        logging.debug(agent_log)
         return 2000 - agent_log[0][1]
 
 
@@ -144,11 +146,11 @@ def experiment(runs, controlname, compsnames):
                 break
         pickle_in.close()
     active_control_data = [parselog(agent[0]) for agent in active_control_data]
-    care_control_data = [parselog(agent[0]) for agent in care_control_data]
-    for dataset in active_comps_data:
-        dataset = [parselog(agent[0]) for agent in dataset]
-    for dataset in care_comps_data:
-        dataset = [parselog(agent[0]) for agent in dataset]
+    care_control_data = [parselog(agent.split(': ')[1]) for agent in care_control_data]
+    for n in range(len(active_comps_data)):
+        active_comps_data[n] = [parselog(agent[0]) for agent in active_comps_data[n]]
+    for n in range(len(care_comps_data)):
+        care_comps_data[n] = [parselog(agent.split(': ')[1]) for agent in care_comps_data[n]]
     # Run counters out to a useable dataset get counter sets for everything but make sure we know how to call them
     active_control_ml = [counters(agent)[0] for agent in active_control_data]
     care_control_ml = [counters(agent)[0] for agent in care_control_data]
@@ -186,6 +188,7 @@ def experiment(runs, controlname, compsnames):
     effectsizeset("Care Agent Severe Fall Comparison", care_control_sv, care_comps_sv, controlname, compsnames)
     effectsizeset("Care Agent Recovery Comparison", care_control_rc, care_comps_rc, controlname, compsnames)
     effectsizeset("Care Agent SI Comparison", care_control_si, care_comps_si, controlname, compsnames)
+    violinboxplots("Recovery Comparison", [care_control_rc] + care_comps_rc, ["Control", "Open 50%", "Dynamic"])
 
 
 experiment(5, "scarce_contrl", ["scarce_open50", "scarce_dynamic"])
