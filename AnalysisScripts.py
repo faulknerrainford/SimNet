@@ -1,7 +1,7 @@
 from matplotlib.pylab import *
 from matplotlib import pyplot as plt
 import pickle
-from Fall_Balancer import parselog
+from FallModel.Fall_Balancer import parselog
 import scipy.stats as sps
 import seaborn as sns
 import logging
@@ -121,24 +121,24 @@ def experiment(runs, controlname, compsnames):
     care_comps_data = list(range(len(compsnames)))
 
     for i in range(1, runs + 1):
-        pickle_in = open("logs_" + controlname + "_" + str(i) + ".p", "rb")
+        pickle_in = open("FallData/logs_" + controlname + "_" + str(i) + ".p", "rb")
         active_control_data = active_control_data + pickle.load(pickle_in)
         pickle_in.close()
         for n in range(len(compsnames)):
             if active_comps_data[n] == n:
                 active_comps_data[n] = []
                 care_comps_data[n] = []
-            pickle_in = open("logs_" + compsnames[n] + "_" + str(i) + ".p", "rb")
+            pickle_in = open("FallData/logs_" + compsnames[n] + "_" + str(i) + ".p", "rb")
             active_comps_data[n] = active_comps_data[n] + pickle.load(pickle_in)
             pickle_in.close()
-            pickle_in = open("AgentLogscareag_" + compsnames[n] + "_" + str(i) + ".p", "rb")
+            pickle_in = open("FallData/AgentLogscareag_" + compsnames[n] + "_" + str(i) + ".p", "rb")
             while True:
                 try:
                     care_comps_data[n].append(pickle.load(pickle_in))
                 except EOFError:
                     break
             pickle_in.close()
-        pickle_in = open("AgentLogscareag_" + controlname + "_" + str(i) + ".p", "rb")
+        pickle_in = open("FallData/AgentLogscareag_" + controlname + "_" + str(i) + ".p", "rb")
         while True:
             try:
                 care_control_data.append(pickle.load(pickle_in))
@@ -188,8 +188,12 @@ def experiment(runs, controlname, compsnames):
     effectsizeset("Care Agent Severe Fall Comparison", care_control_sv, care_comps_sv, controlname, compsnames)
     effectsizeset("Care Agent Recovery Comparison", care_control_rc, care_comps_rc, controlname, compsnames)
     effectsizeset("Care Agent SI Comparison", care_control_si, care_comps_si, controlname, compsnames)
-    violinboxplots("Recovery Comparison", [care_control_rc] + care_comps_rc, ["Control", "Open 50%", "Dynamic"])
-
+    # violinboxplots("Recovery Comparison", [care_control_rc] + care_comps_rc, ["Control", "Open 50%", "Dynamic"])
+    print("Medians: Control, Open50, Dynamic")
+    print("Recoveries")
+    print([median(dist) for dist in [care_control_rc] + care_comps_rc])
+    print("SIs")
+    print([median(dist) for dist in [care_control_si] + care_comps_si])
 
 experiment(5, "scarce_contrl", ["scarce_open50", "scarce_dynamic"])
 
